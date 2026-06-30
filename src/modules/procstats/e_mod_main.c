@@ -1,7 +1,7 @@
 # include <e.h>
 #include "process.h"
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || defined(__NetBSD__)
 # include <sys/types.h>
 # include <sys/sysctl.h>
 #endif
@@ -111,7 +111,7 @@ _cpu_count(void)
      }
 
    fclose(f);
-#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__NetBSD__)
    size_t len;
    int mib[2] = { CTL_HW, HW_NCPU };
 

@@ -33,6 +33,9 @@
 # include <sys/procctl.h>
 #endif
 
+#ifdef HAVE_ENVIRON
+extern char **environ;
+#endif
 
 #define E_UTIL_SUID_ERR(args...) do { fprintf(stderr, "E_SUID_ERR: "); fprintf(stderr, ##args); } while (0)
 

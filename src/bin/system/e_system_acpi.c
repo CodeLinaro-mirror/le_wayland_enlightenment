@@ -3,6 +3,8 @@
 // no local funcs
 #elif defined __FreeBSD__
 // no local funcs
+#elif defined __NetBSD__
+// no local funcs
 #else
 #  include <linux/input.h>
 #  include <fcntl.h>
@@ -233,6 +235,8 @@ e_system_acpi_init(void)
 #  if defined __OpenBSD__
 // no local funcs
 #  elif defined __FreeBSD__
+// no local funcs
+#elif defined __NetBSD__
 // no local funcs
 #  else
   dev_open();

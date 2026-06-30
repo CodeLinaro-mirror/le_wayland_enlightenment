@@ -100,7 +100,7 @@ wizard_page_show(E_Wizard_Page *pg EINA_UNUSED)
    Eina_List *tempdevs = NULL;
 #endif
    int hav_temperature = 0;
-#if defined (__FreeBSD__) || defined (__OpenBSD__)
+#if defined (__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__)
    // figure out on bsd if we have temp sensors
 #else
    const char *sensor_path[] = {

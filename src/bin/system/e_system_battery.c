@@ -3,6 +3,8 @@
 // no local funcs
 #elif defined __FreeBSD__
 // no local funcs
+#elif defined __NetBSD__
+// no local funcs
 #else
 
 typedef struct
@@ -108,6 +110,8 @@ e_system_battery_init(void)
 #if defined __OpenBSD__
 // no local funcs
 #elif defined __FreeBSD__
+// no local funcs
+#elif defined __NetBSD__
 // no local funcs
 #else
   Eina_List *devs;

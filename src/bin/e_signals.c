@@ -107,8 +107,8 @@ _e_siginfo(int sig, siginfo_t *info)
       NAME(SEGV_ACCERR);
 #ifdef __linux__
       NAME(SEGV_BNDERR);
-#endif
       NAME(SEGV_PKUERR);
+#endif
       NUMX(info->si_code);
     } break;
    case SIGILL:
