@@ -359,6 +359,7 @@ _gc_orient(E_Gadcon_Client *gcc, E_Gadcon_Orient orient)
 
    inst = gcc->data;
    if ((int)orient != -1) inst->orient = orient;
+   else return;
 
    if (_is_vertical(inst))
      {
@@ -1968,7 +1969,7 @@ _ibar_cb_icon_move(void *data, Evas *e, Evas_Object *obj, void *event_info EINA_
             (ic->ibar->inst->orient == E_GADCON_ORIENT_CORNER_RT) ||
             (ic->ibar->inst->orient == E_GADCON_ORIENT_CORNER_RB))
      sig = "e,origin,right";
-   else
+   else if (ic->ibar->inst->orient == E_GADCON_ORIENT_FLOAT)
      {
         if (chx - (len / 2) < zone->x)
           sig = "e,origin,left";
