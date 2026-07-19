@@ -13,6 +13,7 @@ typedef unsigned char Eina_Bool;
 # include "e.h"
 # include "e_networkmanager.h"
 # include "e_networkmanager_import.h"
+# include "e_mod_main.h"
 # include "e_networkmanager_vpn_username.h"
 #endif
 
@@ -265,6 +266,7 @@ enm_vpn_username_dialog(const char *conn_name, const char *type_label,
 
    evas_object_show(frame);
    e_dialog_content_set(dialog, frame, minw, 0);
+   enm_popups_del();
    e_dialog_show(dialog);
 
    evas_object_event_callback_add(dialog->bg_object, EVAS_CALLBACK_KEY_DOWN,

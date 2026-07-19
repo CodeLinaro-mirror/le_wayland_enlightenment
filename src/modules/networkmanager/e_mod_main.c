@@ -168,11 +168,11 @@ enm_config_poll_time_set(double tim)
 }
 
 void
-enm_config_dialog_show(E_NM_Instance *inst)
+enm_config_dialog_show(E_NM_Instance *inst EINA_UNUSED)
 {
    if (!networkmanager_config) return;
    if (networkmanager_config->config_dialog) return;
-   if (inst && inst->popup) enm_popup_del(inst);
+   enm_popups_del();
    e_int_config_networkmanager_module(NULL, NULL);
 }
 
@@ -228,6 +228,7 @@ e_nm_theme_path(void)
 void
 enm_popup_del(E_NM_Instance *inst)
 {
+   if (!inst) return;
    E_FREE_FUNC(inst->ui.popup.deselect_timer, ecore_timer_del);
    inst->ui.popup.deselect_item = NULL;
    E_FREE_FUNC(inst->popup, e_object_del);
@@ -247,6 +248,23 @@ enm_popup_del(E_NM_Instance *inst)
    E_FREE_FUNC(inst->ui.popup.itc_ap, elm_genlist_item_class_free);
    E_FREE_FUNC(inst->ui.popup.itc_eth, elm_genlist_item_class_free);
    E_FREE_FUNC(inst->ui.popup.itc_vpn, elm_genlist_item_class_free);
+}
+
+void
+enm_popups_del(void)
+{
+   E_NM_Module_Context *ctxt;
+   Eina_List *l;
+   E_NM_Instance *inst;
+
+   if (!networkmanager_mod) return;
+   ctxt = networkmanager_mod->data;
+   if (!ctxt) return;
+
+   EINA_LIST_FOREACH(ctxt->instances, l, inst)
+     {
+        if (inst->popup) enm_popup_del(inst);
+     }
 }
 
 static void
@@ -548,6 +566,7 @@ _enm_vpn_import_done_cb(void *data, Eina_Bool ok, const char *err,
      e_dialog_text_set(err_dlg, _("Unknown error"));
    e_dialog_button_add(err_dlg, _("Close"), NULL, NULL, NULL);
    elm_win_center(err_dlg->win, 1, 1);
+   enm_popups_del();
    e_dialog_show(err_dlg);
 }
 
@@ -576,10 +595,9 @@ _enm_vpn_fs_done_cb(void *data, Evas_Object *fs EINA_UNUSED, void *event)
 }
 
 static void
-_enm_vpn_import_clicked_cb(void *data, Evas_Object *o EINA_UNUSED,
+_enm_vpn_import_clicked_cb(void *data EINA_UNUSED, Evas_Object *o EINA_UNUSED,
                            void *einfo EINA_UNUSED)
 {
-   E_NM_Instance *inst = data;
    E_Dialog *dialog;
    Evas_Object *fs;
    const char *dir = efreet_download_dir_get();
@@ -600,8 +618,8 @@ _enm_vpn_import_clicked_cb(void *data, Evas_Object *o EINA_UNUSED,
    evas_object_show(fs);
    e_dialog_content_set(dialog, fs, ELM_SCALE_SIZE(360), ELM_SCALE_SIZE(320));
    elm_win_center(dialog->win, 1, 1);
+   enm_popups_del();
    e_dialog_show(dialog);
-   enm_popup_del(inst);
 }
 
 /* VPN group header: text "VPN" */
@@ -804,6 +822,7 @@ _enm_vpn_show_forget_dialog(struct NM_VPN_Connection *vc)
    e_object_data_set(E_OBJECT(d), ctx);
    e_object_del_attach_func_set(E_OBJECT(d), _enm_vpn_forget_dialog_del_cb);
    elm_win_center(d->win, 1, 1);
+   enm_popups_del();
    e_dialog_show(d);
 }
 

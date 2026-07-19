@@ -101,6 +101,7 @@ E_API int   e_modapi_save(E_Module *m);
 E_Config_Dialog *e_int_config_networkmanager_module(Evas_Object *parent,
                                                     const char *params);
 void        enm_popup_del(E_NM_Instance *inst);
+void        enm_popups_del(void);
 void        enm_mod_aps_update_now(void);
 void        enm_config_dialog_show(E_NM_Instance *inst);
 void        enm_config_poll_time_set(double tim);

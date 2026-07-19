@@ -373,6 +373,7 @@ _dialog_new(E_NM_Agent_Request *req, const char *ssid)
 
    evas_object_show(frame);
    e_dialog_content_set(dialog, frame, 0, 0);
+   enm_popups_del();
    e_dialog_show(dialog);
 
    evas_object_event_callback_add(dialog->bg_object, EVAS_CALLBACK_KEY_DOWN,
@@ -504,6 +505,7 @@ _vpn_dialog_new(E_NM_Agent_Request *req, const char *conn_name,
 
    evas_object_show(frame);
    e_dialog_content_set(dialog, frame, minw, 0);
+   enm_popups_del();
    e_dialog_show(dialog);
 
    evas_object_event_callback_add(dialog->bg_object, EVAS_CALLBACK_KEY_DOWN,
