@@ -9,6 +9,7 @@ E_Module *networkmanager_mod = NULL;
 E_NM_Config *networkmanager_config = NULL;
 static Eina_Stringshare *_theme_path = NULL;
 static E_Config_DD *conf_edd = NULL;
+static E_Config_DD *saved_field_edd = NULL;
 
 const char _e_nm_name[] = "networkmanager";
 const char _e_nm_Name[] = N_("NetworkManager");
@@ -19,6 +20,111 @@ static void _enm_traffic_timer_start(E_NM_Module_Context *ctxt);
 static void _enm_traffic_timer_stop(E_NM_Module_Context *ctxt);
 static void _enm_configure_registry_register(void);
 static void _enm_configure_registry_unregister(void);
+static void _enm_saved_field_free(E_NM_Saved_Field *sf);
+
+static E_NM_Saved_Field *
+_enm_saved_field_find(const char *conn_path, const char *setting_name,
+                      const char *field_name)
+{
+   Eina_List *l;
+   E_NM_Saved_Field *sf;
+
+   if (!networkmanager_config || !conn_path || !setting_name || !field_name)
+     return NULL;
+
+   EINA_LIST_FOREACH(networkmanager_config->saved_fields, l, sf)
+     {
+        if ((!sf->conn_path) || (!sf->setting_name) || (!sf->field_name))
+          continue;
+        if (strcmp(sf->conn_path, conn_path)) continue;
+        if (strcmp(sf->setting_name, setting_name)) continue;
+        if (strcmp(sf->field_name, field_name)) continue;
+        return sf;
+     }
+   return NULL;
+}
+
+static void
+_enm_saved_field_free(E_NM_Saved_Field *sf)
+{
+   if (!sf) return;
+   eina_stringshare_del(sf->conn_path);
+   eina_stringshare_del(sf->setting_name);
+   eina_stringshare_del(sf->field_name);
+   eina_stringshare_del(sf->value);
+   free(sf);
+}
+
+const char *
+enm_config_field_value_get(const char *conn_path, const char *setting_name,
+                           const char *field_name)
+{
+   E_NM_Saved_Field *sf;
+
+   sf = _enm_saved_field_find(conn_path, setting_name, field_name);
+   return sf ? sf->value : NULL;
+}
+
+void
+enm_config_field_value_set(const char *conn_path, const char *setting_name,
+                           const char *field_name, const char *value)
+{
+   E_NM_Saved_Field *sf;
+
+   if (!networkmanager_config || !conn_path || !setting_name || !field_name)
+     return;
+
+   sf = _enm_saved_field_find(conn_path, setting_name, field_name);
+   if ((!value) || (!value[0]))
+     {
+        if (!sf) return;
+        networkmanager_config->saved_fields =
+          eina_list_remove(networkmanager_config->saved_fields, sf);
+        _enm_saved_field_free(sf);
+        e_config_save_queue();
+        return;
+     }
+
+   if (!sf)
+     {
+        sf = E_NEW(E_NM_Saved_Field, 1);
+        if (!sf) return;
+        sf->conn_path = eina_stringshare_add(conn_path);
+        sf->setting_name = eina_stringshare_add(setting_name);
+        sf->field_name = eina_stringshare_add(field_name);
+        if ((!sf->conn_path) || (!sf->setting_name) || (!sf->field_name))
+          {
+             _enm_saved_field_free(sf);
+             return;
+          }
+        networkmanager_config->saved_fields =
+          eina_list_append(networkmanager_config->saved_fields, sf);
+     }
+
+   eina_stringshare_replace(&sf->value, value);
+   e_config_save_queue();
+}
+
+void
+enm_config_fields_clear_for_connection(const char *conn_path)
+{
+   Eina_List *l, *ln;
+   E_NM_Saved_Field *sf;
+   Eina_Bool changed = EINA_FALSE;
+
+   if (!networkmanager_config || !conn_path) return;
+
+   EINA_LIST_FOREACH_SAFE(networkmanager_config->saved_fields, l, ln, sf)
+     {
+        if ((!sf->conn_path) || strcmp(sf->conn_path, conn_path)) continue;
+        networkmanager_config->saved_fields =
+          eina_list_remove_list(networkmanager_config->saved_fields, l);
+        _enm_saved_field_free(sf);
+        changed = EINA_TRUE;
+     }
+
+   if (changed) e_config_save_queue();
+}
 
 typedef struct _Enm_Traffic_Worker
 {
@@ -649,7 +755,11 @@ _enm_vpn_forget_ok_cb(void *data, E_Dialog *d)
      {
         struct NM_VPN_Connection *vc =
             enm_vpn_find_by_uuid(ctxt->nm, ctx->uuid);
-        if (vc) enm_vpn_delete(ctxt->nm, vc);
+        if (vc)
+          {
+             enm_config_fields_clear_for_connection(vc->path);
+             enm_vpn_delete(ctxt->nm, vc);
+          }
      }
    /* Clear the dialog's data ref before delete so the del-attach cb
     * cannot double-free the ctx. */
@@ -1100,6 +1210,7 @@ _enm_forget_click_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    /* Kick off the actual async delete — ConnectionRemoved signal will
     * trigger enm_saved_connections_get once NM has committed the removal. */
+   enm_config_fields_clear_for_connection(conn_path);
    enm_connection_delete(nm, conn_path);
    eina_stringshare_del(conn_path);
 }
@@ -3039,12 +3150,23 @@ e_modapi_init(E_Module *m)
    E_NM_Module_Context *ctxt;
 
    conf_edd = E_CONFIG_DD_NEW("NetworkManager_Config", E_NM_Config);
+   saved_field_edd =
+     E_CONFIG_DD_NEW("NetworkManager_Saved_Field", E_NM_Saved_Field);
+#undef T
+#undef D
+#define T E_NM_Saved_Field
+#define D saved_field_edd
+   E_CONFIG_VAL(D, T, conn_path, STRI);
+   E_CONFIG_VAL(D, T, setting_name, STRI);
+   E_CONFIG_VAL(D, T, field_name, STRI);
+   E_CONFIG_VAL(D, T, value, STRI);
 #undef T
 #undef D
 #define T E_NM_Config
 #define D conf_edd
    E_CONFIG_VAL(D, T, config_version, INT);
    E_CONFIG_VAL(D, T, poll_time, DOUBLE);
+   E_CONFIG_LIST(D, T, saved_fields, saved_field_edd);
 
    networkmanager_config = e_config_domain_load("module.networkmanager",
                                                 conf_edd);
@@ -3154,8 +3276,16 @@ e_modapi_shutdown(E_Module *m)
 
    if (networkmanager_config && networkmanager_config->config_dialog)
      e_object_del(E_OBJECT(networkmanager_config->config_dialog));
+   if (networkmanager_config)
+     {
+        E_NM_Saved_Field *sf;
+
+        EINA_LIST_FREE(networkmanager_config->saved_fields, sf)
+          _enm_saved_field_free(sf);
+     }
    E_FREE(networkmanager_config);
    E_CONFIG_DD_FREE(conf_edd);
+   E_CONFIG_DD_FREE(saved_field_edd);
 
    eina_log_domain_unregister(_e_nm_log_dom);
    _e_nm_log_dom = -1;

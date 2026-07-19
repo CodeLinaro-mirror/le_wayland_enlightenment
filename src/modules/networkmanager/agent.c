@@ -31,6 +31,8 @@ struct _E_NM_Agent_Dialog
    E_Dialog            *dialog;
    E_NM_Agent_Request  *req;
    Eina_Bool            is_vpn;
+   char                *conn_path;
+   char                *setting_name;
    /* Wifi mode: single field. */
    Evas_Object         *psk_entry;
    /* VPN mode: parallel arrays of size n_fields. */
@@ -52,6 +54,9 @@ static E_NM_Agent_Dialog *_current_dialog = NULL;
 static void
 _dialog_send_ok(E_NM_Agent_Dialog *ad)
 {
+   const char *setting_name = ad->setting_name;
+   const char *conn_path = ad->conn_path;
+
    if (!ad->req) { e_object_del(E_OBJECT(ad->dialog)); return; }
 
    if (!ad->is_vpn)
@@ -59,6 +64,7 @@ _dialog_send_ok(E_NM_Agent_Dialog *ad)
         /* elm_entry stores markup internally; convert to plain UTF-8 so that
          * passwords containing '<' or '&' survive the round-trip to NM. */
         char *psk = elm_entry_markup_to_utf8(elm_entry_entry_get(ad->psk_entry));
+        enm_config_field_value_set(conn_path, setting_name, "psk", psk);
         e_nm_agent_reply_secrets(ad->req, psk);
         free(psk);
      }
@@ -78,6 +84,8 @@ _dialog_send_ok(E_NM_Agent_Dialog *ad)
                   utf8[i] = elm_entry_markup_to_utf8(
                                elm_entry_entry_get(ad->field_entries[i]));
                   values[i] = utf8[i] ?: "";
+                  enm_config_field_value_set(conn_path, setting_name,
+                                             ad->field_names[i], values[i]);
                }
              e_nm_agent_reply_vpn_secrets(ad->req,
                    (const char *const *)ad->field_names,
@@ -157,6 +165,8 @@ _dialog_del_cb(void *data)
         for (unsigned int i = 0; i < ad->n_fields; i++) free(ad->field_names[i]);
         free(ad->field_names);
      }
+   free(ad->conn_path);
+   free(ad->setting_name);
    free(ad->field_entries);
    free(ad);
 }
@@ -270,6 +280,19 @@ _field_column_min_width_set(Evas_Object *table, int col)
    evas_object_show(rect);
 }
 
+static void
+_entry_text_set_plain(Evas_Object *entry, const char *text)
+{
+   char *markup;
+
+   if (!entry || !text || !text[0]) return;
+   markup = elm_entry_utf8_to_markup(text);
+   if (!markup) return;
+   elm_entry_entry_set(entry, markup);
+   elm_entry_cursor_end_set(entry);
+   free(markup);
+}
+
 /* -------------------------------------------------------------------------- */
 /* Dialog construction                                                         */
 /* -------------------------------------------------------------------------- */
@@ -289,6 +312,10 @@ _dialog_new(E_NM_Agent_Request *req, const char *ssid)
    ad->dialog  = dialog;
    ad->req     = req;
    ad->is_vpn  = EINA_FALSE;
+   if (e_nm_agent_request_connection_path_get(req))
+     ad->conn_path = strdup(e_nm_agent_request_connection_path_get(req));
+   if (e_nm_agent_request_setting_name_get(req))
+     ad->setting_name = strdup(e_nm_agent_request_setting_name_get(req));
 
    e_dialog_resizable_set(dialog, 0);
    e_dialog_title_set(dialog, _("WiFi Password Required"));
@@ -330,6 +357,10 @@ _dialog_new(E_NM_Agent_Request *req, const char *ssid)
    elm_table_pack(table, entry, 1, 0, 1, 1);
    evas_object_show(entry);
    ad->psk_entry = entry;
+   _entry_text_set_plain(entry,
+                         enm_config_field_value_get(ad->conn_path,
+                                                    ad->setting_name,
+                                                    "psk"));
 
    check = elm_check_add(table);
    elm_object_text_set(check, _("Show password"));
@@ -373,6 +404,10 @@ _vpn_dialog_new(E_NM_Agent_Request *req, const char *conn_name,
    ad->dialog = dialog;
    ad->req    = req;
    ad->is_vpn = EINA_TRUE;
+   if (e_nm_agent_request_connection_path_get(req))
+     ad->conn_path = strdup(e_nm_agent_request_connection_path_get(req));
+   if (e_nm_agent_request_setting_name_get(req))
+     ad->setting_name = strdup(e_nm_agent_request_setting_name_get(req));
    ad->n_fields = n_fields;
    ad->field_names = calloc(n_fields ?: 1, sizeof(*ad->field_names));
    ad->field_entries = calloc(n_fields ?: 1, sizeof(*ad->field_entries));
@@ -461,6 +496,10 @@ _vpn_dialog_new(E_NM_Agent_Request *req, const char *conn_name,
         evas_object_show(entry);
 
         ad->field_entries[i] = entry;
+        _entry_text_set_plain(entry,
+                              enm_config_field_value_get(ad->conn_path,
+                                                         ad->setting_name,
+                                                         field));
      }
 
    evas_object_show(frame);

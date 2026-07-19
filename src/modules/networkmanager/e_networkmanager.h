@@ -55,6 +55,8 @@ struct _E_NM_Agent_Callbacks
 };
 
 void e_nm_agent_callbacks_set(const E_NM_Agent_Callbacks *cbs, void *data);
+const char *e_nm_agent_request_connection_path_get(const E_NM_Agent_Request *req);
+const char *e_nm_agent_request_setting_name_get(const E_NM_Agent_Request *req);
 void e_nm_agent_reply_secrets(E_NM_Agent_Request *req, const char *psk);
 void e_nm_agent_reply_cancel(E_NM_Agent_Request *req);
 void e_nm_agent_reply_vpn_secrets(E_NM_Agent_Request *req,

@@ -3085,6 +3085,18 @@ e_nm_agent_callbacks_set(const E_NM_Agent_Callbacks *cbs, void *data)
    _agent_cb_data = data;
 }
 
+const char *
+e_nm_agent_request_connection_path_get(const E_NM_Agent_Request *req)
+{
+   return req ? req->conn_path : NULL;
+}
+
+const char *
+e_nm_agent_request_setting_name_get(const E_NM_Agent_Request *req)
+{
+   return req ? req->setting_name : NULL;
+}
+
 static void
 _agent_request_free(E_NM_Agent_Request *req)
 {

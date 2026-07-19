@@ -14,11 +14,21 @@ extern int _e_nm_log_dom;
 typedef struct E_NM_Instance       E_NM_Instance;
 typedef struct E_NM_Module_Context E_NM_Module_Context;
 typedef struct E_NM_Config         E_NM_Config;
+typedef struct E_NM_Saved_Field    E_NM_Saved_Field;
+
+struct E_NM_Saved_Field
+{
+   const char *conn_path;
+   const char *setting_name;
+   const char *field_name;
+   const char *value;
+};
 
 struct E_NM_Config
 {
    int               config_version;
    double            poll_time;
+   Eina_List        *saved_fields;
    E_Config_Dialog  *config_dialog;
    E_Module         *module;
 };
@@ -94,6 +104,14 @@ void        enm_popup_del(E_NM_Instance *inst);
 void        enm_mod_aps_update_now(void);
 void        enm_config_dialog_show(E_NM_Instance *inst);
 void        enm_config_poll_time_set(double tim);
+const char *enm_config_field_value_get(const char *conn_path,
+                                       const char *setting_name,
+                                       const char *field_name);
+void        enm_config_field_value_set(const char *conn_path,
+                                       const char *setting_name,
+                                       const char *field_name,
+                                       const char *value);
+void        enm_config_fields_clear_for_connection(const char *conn_path);
 const char *e_nm_theme_path(void);
 
 /* Register the password-dialog UI callbacks with the agent subsystem. */
