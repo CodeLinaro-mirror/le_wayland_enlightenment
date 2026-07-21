@@ -102,7 +102,7 @@ _basic_create_widgets(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED,
    elm_slider_min_max_set(obj, 0.1, 10.0);
    elm_slider_step_set(obj, 0.1);
    elm_slider_indicator_show_set(obj, EINA_FALSE);
-   elm_slider_unit_format_set(obj, "%1.1f sec");
+   elm_slider_unit_format_set(obj, _("%1.1f sec"));
    evas_object_size_hint_align_set(obj, EVAS_HINT_FILL, 0.5);
    evas_object_size_hint_weight_set(obj, EVAS_HINT_EXPAND, 0.0);
    elm_table_pack(table, obj, 0, 1, 10, 1);
