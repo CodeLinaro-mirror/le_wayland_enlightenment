@@ -861,6 +861,7 @@ _e_comp_x_post_client_idler_cb(void *d EINA_UNUSED)
      }
    if (e_comp_x->restack && (!e_comp->new_clients))
      {
+        _e_comp_x_client_stack_sync();
         e_hints_client_stacking_set();
         e_comp_x->restack = 0;
      }
@@ -947,6 +948,46 @@ _e_comp_x_client_stack(E_Client *ec)
    e_comp_x->restack = 1;
    EINA_LIST_FOREACH(ec->e.state.video_child, l, ec2)
      evas_object_stack_below(ec2->frame, ec->frame);
+}
+
+static void
+_e_comp_x_client_stack_sync(void)
+{
+   E_Client *ec;
+   Ecore_X_Window win = 0;
+   unsigned int layer = E_LAYER_COUNT;
+
+   ecore_x_window_shadow_tree_flush();
+
+   for (ec = e_client_top_get(); ec; ec = e_client_below_get(ec))
+     {
+        E_Comp_X_Client_Data *cd;
+        unsigned int l;
+
+        if (!e_client_has_xwindow(ec)) continue;
+        if ((ec->override) && (!ec->internal)) continue;
+        if (e_client_is_stacking(ec)) continue;
+        if (!_e_comp_x_client_data_get(ec)) continue;
+
+        cd = _e_comp_x_client_data_get(ec);
+        if (cd->unredirected_single) continue;
+        if ((cd->need_reparent) && (!cd->reparented)) continue;
+
+        l = e_comp_canvas_layer_map(ec->layer);
+        if (l != layer)
+          {
+             layer = l;
+             win = e_comp->layers[layer].win;
+          }
+        if (!win) continue;
+
+        ecore_x_window_configure(_e_comp_x_client_window_get(ec),
+                                 ECORE_X_WINDOW_CONFIGURE_MASK_SIBLING |
+                                 ECORE_X_WINDOW_CONFIGURE_MASK_STACK_MODE,
+                                 0, 0, 0, 0, 0, win,
+                                 ECORE_X_WINDOW_STACK_BELOW);
+        win = _e_comp_x_client_window_get(ec);
+     }
 }
 
 static E_Client *
@@ -3446,6 +3487,7 @@ _e_comp_x_hook_client_eval_end(void *d EINA_UNUSED, E_Client *ec)
    E_COMP_X_PIXMAP_CHECK;
    if (e_comp_x->restack && (!e_comp->new_clients))
      {
+        _e_comp_x_client_stack_sync();
         e_hints_client_stacking_set();
         e_comp_x->restack = 0;
      }
