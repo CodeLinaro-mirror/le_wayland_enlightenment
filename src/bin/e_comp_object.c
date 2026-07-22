@@ -5019,6 +5019,12 @@ e_comp_object_shape_input_update(Evas_Object *obj)
   API_ENTRY;
 
   ec = cw->ec;
+  if (ec->comp_hidden || evas_object_pass_events_get(obj))
+    {
+      evas_object_pass_events_set(cw->obj, EINA_TRUE);
+      evas_object_event_rects_set(cw->obj, NULL);
+      return;
+    }
   if ((ec->shaped_input) && (ec->shape_input_rects))
     {
       Eina_Rect *rects;

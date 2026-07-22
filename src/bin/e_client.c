@@ -5027,6 +5027,8 @@ e_client_comp_hidden_set(E_Client *ec, Eina_Bool hidden)
    if (ec->comp_hidden == hidden) return;
    ec->comp_hidden = hidden;
    evas_object_smart_callback_call(ec->frame, "comp_hidden", NULL);
+   e_comp_object_shape_input_update(ec->frame);
+   e_comp_shape_queue();
 }
 
 ///////////////////////////////////////

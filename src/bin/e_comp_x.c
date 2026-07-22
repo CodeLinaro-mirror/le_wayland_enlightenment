@@ -84,6 +84,8 @@ static Eina_Hash *dead_wins;
 static Ecore_Window _e_comp_x_suspend_grabbed; // window grabber for suspending pointer
 
 static void _e_comp_x_hook_client_pre_frame_assign(void *d EINA_UNUSED, E_Client *ec);
+static void _e_comp_x_client_shape_input_rectangle_set(E_Client *ec);
+static void _e_comp_x_client_stack_sync(void);
 
 static inline E_Comp_X_Client_Data *
 _e_comp_x_client_data_get(const E_Client *ec)
@@ -852,6 +854,7 @@ _e_comp_x_post_client_idler_cb(void *d EINA_UNUSED)
                   _e_comp_x_client_data_get(ec)->pw = ec->client.w;
                   _e_comp_x_client_data_get(ec)->ph = ec->client.h;
                }
+             _e_comp_x_client_shape_input_rectangle_set(ec);
           }
         ec->post_move = 0;
         ec->post_resize = 0;
@@ -979,13 +982,36 @@ static void
 _e_comp_x_client_shape_input_rectangle_set(E_Client *ec)
 {
    Ecore_X_Window win = e_client_util_pwin_get(ec);
+   Eina_Bool accepts_input;
 
    if (ec->override || (!_e_comp_x_client_data_get(ec)->reparented)) return;
 
-   if (ec->visible && (!ec->comp_hidden))
+   accepts_input = ec->visible && (!ec->comp_hidden);
+   if (accepts_input)
      ecore_x_composite_window_events_enable(win);
    else
      ecore_x_composite_window_events_disable(win);
+
+   if (!accepts_input)
+     {
+        ecore_x_window_shape_input_rectangles_set(win, NULL, 0);
+        return;
+     }
+
+   if (!ec->shaped_input)
+     {
+        Ecore_X_Rectangle rect = { 0, 0, ec->client.w, ec->client.h };
+
+        ecore_x_window_shape_input_rectangles_set(win, &rect, 1);
+        return;
+     }
+
+   if (ec->shape_input_rects)
+     ecore_x_window_shape_input_rectangles_set(win,
+                                               (Ecore_X_Rectangle*)ec->shape_input_rects,
+                                               ec->shape_input_rects_num);
+   else
+     ecore_x_window_shape_input_rectangles_set(win, NULL, 0);
 }
 
 static void
@@ -1060,7 +1086,8 @@ _e_comp_x_evas_comp_hidden_cb(void *data, Evas_Object *obj EINA_UNUSED, void *ev
         else
           ecore_x_composite_window_events_enable(win);
      }
-    ecore_x_window_ignore_set(win, ec->comp_hidden);
+   ecore_x_window_ignore_set(win, ec->comp_hidden);
+   _e_comp_x_client_shape_input_rectangle_set(ec);
 }
 
 static void
@@ -3482,11 +3509,7 @@ _e_comp_x_hook_client_post_new_client(void *d EINA_UNUSED, E_Client *ec)
 
 //            L("SHP: shp merge 0x%x - set 0", pwin);
             ecore_x_window_shape_mask_set(pwin, 0);
-            if ((ec->shaped_input) && (ec->shape_input_rects))
-              {
-//                L("SHP: set00: 0x%x %p %i", pwin, (Ecore_X_Rectangle*)ec->shape_input_rects, ec->shape_input_rects_num);
-                ecore_x_window_shape_input_rectangles_set(pwin, (Ecore_X_Rectangle*)ec->shape_input_rects, ec->shape_input_rects_num);
-              }
+            _e_comp_x_client_shape_input_rectangle_set(ec);
             e_comp_object_shape_input_update(ec->frame);
           }
         ec->need_shape_merge = 0;
@@ -3628,11 +3651,7 @@ _e_comp_x_hook_client_pre_frame_assign(void *d EINA_UNUSED, E_Client *ec)
 //       L("SHP: not shaped zero 0x%x", pwin);
        ecore_x_window_shape_mask_set(pwin, 0);
      }
-   if (ec->shaped_input)
-     {
-//       L("SHP: set0: 0x%x %p %i", pwin, (Ecore_X_Rectangle*)ec->shape_input_rects, ec->shape_input_rects_num);
-       ecore_x_window_shape_input_rectangles_set(pwin, (Ecore_X_Rectangle*)ec->shape_input_rects, ec->shape_input_rects_num);
-     }
+   _e_comp_x_client_shape_input_rectangle_set(ec);
    ec->changes.shape = 1;
    ec->changes.shape_input = 1;
    if (ec->internal_elm_win)
@@ -4591,27 +4610,19 @@ _e_comp_x_hook_client_fetch(void *d EINA_UNUSED, E_Client *ec)
                  ((int)rects[0].height == ch))
                {
                   ec->shaped_input = 0;
+                  if (cd->reparented)
+                    _e_comp_x_client_shape_input_rectangle_set(ec);
                   free(rects);
                }
              else
                {
                   ec->shaped_input = 1;
-                  if (cd->reparented)
-                    {
-//                      int ii;
-//
-//                      L("SHP: set2: 0x%x %p %i", pwin, rects, num);
-//                      for (ii = 0; ii < num; ii++) L("SHP:   %i %i   %ix%i",
-//                                                     rects[ii].x,
-//                                                     rects[ii].y,
-//                                                     rects[ii].width,
-//                                                     rects[ii].height);
-                      ecore_x_window_shape_input_rectangles_set(pwin, rects, num);
-                    }
                   changed = EINA_TRUE;
                   free(ec->shape_input_rects);
                   ec->shape_input_rects = (Eina_Rectangle*)rects;
                   ec->shape_input_rects_num = num;
+                  if (cd->reparented)
+                    _e_comp_x_client_shape_input_rectangle_set(ec);
                   e_comp_object_shape_input_update(ec->frame);
                }
              evas_object_pass_events_set(ec->frame, ec->netwm.type == E_WINDOW_TYPE_DND);
@@ -4619,23 +4630,13 @@ _e_comp_x_hook_client_fetch(void *d EINA_UNUSED, E_Client *ec)
         else
           {
              ec->shaped_input = 1;
-             if (cd->reparented)
-               {
-//                 int ii;
-//
-//                 L("SHP: set3: 0x%x %p %i", pwin, rects, num);
-//                 for (ii = 0; ii < num; ii++) L("SHP:   %i %i   %ix%i\n",
-//                                                rects[ii].x,
-//                                                rects[ii].y,
-//                                                rects[ii].width,
-//                                                rects[ii].height);
-                 ecore_x_window_shape_input_rectangles_set(pwin, rects, num);
-               }
              changed = EINA_TRUE;
              evas_object_pass_events_set(ec->frame, 1);
              free(ec->shape_input_rects);
              ec->shape_input_rects = NULL;
              ec->shape_input_rects_num = 0;
+             if (cd->reparented)
+               _e_comp_x_client_shape_input_rectangle_set(ec);
              e_comp_object_shape_input_update(ec->frame);
           }
         if (changed || (pshaped != ec->shaped_input))
