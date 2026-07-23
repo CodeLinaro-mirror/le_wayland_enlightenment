@@ -6,15 +6,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Enlightenment\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-04 20:39+0200\n"
-"PO-Revision-Date: 2026-07-08 14:26+0200\n"
+"POT-Creation-Date: 2026-07-21 18:52+0200\n"
+"PO-Revision-Date: 2026-07-23 10:32+0200\n"
 "Last-Translator: Massimo Maiurana <maiurana@gmail.com>\n"
 "Language-Team: General\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8-bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.9\n"
 
 #: src/bin/e_about.c:17
 msgid "About Enlightenment"
@@ -27,7 +28,8 @@ msgstr "Informazioni su Enlightenment"
 #: src/modules/conf_bindings/e_int_config_edgebindings.c:822
 #: src/modules/conf_bindings/e_int_config_swipebindings.c:919
 #: src/modules/conf/e_conf.c:159 src/modules/everything/evry_plug_windows.c:370
-#: src/modules/fileman/e_fwin.c:2795 src/modules/vkbd/e_kbd_cfg.c:188
+#: src/modules/fileman/e_fwin.c:2795
+#: src/modules/networkmanager/e_mod_main.c:567 src/modules/vkbd/e_kbd_cfg.c:188
 msgid "Close"
 msgstr "Chiudi"
 
@@ -925,6 +927,10 @@ msgstr "Seleziona"
 #: src/modules/conf_theme/e_int_config_theme_import.c:122
 #: src/modules/connman/agent.c:254
 #: src/modules/fileman/e_int_config_mime_edit.c:314
+#: src/modules/networkmanager/agent.c:325
+#: src/modules/networkmanager/agent.c:440
+#: src/modules/networkmanager/e_mod_main.c:821
+#: src/modules/networkmanager/e_networkmanager_vpn_username.c:223
 #: src/modules/polkit/auth_ui.c:185
 #: src/modules/quickaccess/e_mod_quickaccess.c:334
 #: src/modules/quickaccess/e_mod_quickaccess.c:396
@@ -960,7 +966,7 @@ msgstr "Visibile"
 
 #: src/bin/e_comp.c:1486
 msgid "Focus-Out"
-msgstr "fuori fuoco"
+msgstr "Fuori fuoco"
 
 #: src/bin/e_comp.c:1491
 msgid "Focus-In"
@@ -1067,6 +1073,7 @@ msgstr ""
 #: src/modules/conf_intl/e_int_config_imc_import.c:119
 #: src/modules/conf_theme/e_int_config_theme_import.c:118
 #: src/modules/fileman/e_int_config_mime_edit.c:313
+#: src/modules/networkmanager/e_networkmanager_vpn_username.c:222
 #: src/modules/polkit/auth_ui.c:184 src/modules/shot/e_mod_delay.c:79
 #: src/modules/xkbswitch/e_mod_config.c:1521
 msgid "OK"
@@ -1203,7 +1210,7 @@ msgid ""
 msgstr ""
 "La versione delle vostre associazioni non corrisponde alla versione<ps/"
 ">dell'attuale configurazione, quindi tutte le associazioni sono state<ps/"
-">riportate ai valori predefiniti.<ps/> Ci scusiamo per l'inconveniente."
+">riportate ai valori predefiniti.<ps/> Ci scusiamo per l'inconveniente.<ps/>"
 
 #: src/bin/e_config.c:2721
 msgid "Settings Upgraded"
@@ -1228,8 +1235,11 @@ msgid "Apply"
 msgstr "Applica"
 
 #: src/bin/e_configure.c:29 src/modules/conf_shelves/e_mod_main.c:21
-#: src/modules/connman/e_mod_main.c:693 src/modules/gadman/e_mod_main.c:23
-#: src/modules/mixer/e_mod_main.c:1217 src/modules/notification/e_mod_main.c:65
+#: src/modules/connman/e_mod_main.c:693
+#: src/modules/convertible/e_mod_main.c:325 src/modules/gadman/e_mod_main.c:23
+#: src/modules/mixer/e_mod_main.c:1217
+#: src/modules/networkmanager/e_mod_main.c:3150
+#: src/modules/notification/e_mod_main.c:65
 msgid "Extensions"
 msgstr "Estensioni"
 
@@ -1416,7 +1426,7 @@ msgid ""
 "application failed to start."
 msgstr ""
 "Enlightenment non ha potuto avviare l'applicazione:<ps/><ps/>%s<ps/><ps/"
-">L'applicazione non è partita"
+">L'applicazione non è partita."
 
 #: src/bin/e_exec.c:1038
 msgid "Application Execution Error"
@@ -1425,7 +1435,7 @@ msgstr "Errore d'esecuzione dell'applicazione"
 #: src/bin/e_exec.c:1051 src/bin/e_exec.c:1053
 #, c-format
 msgid "%s stopped running unexpectedly."
-msgstr "L'esecuzione di %s è terminata inaspettatamente"
+msgstr "L'esecuzione di %s è terminata inaspettatamente."
 
 #: src/bin/e_exec.c:1059
 #, c-format
@@ -1435,52 +1445,52 @@ msgstr "%2$s ha restituito il codice d'uscita %1$i."
 #: src/bin/e_exec.c:1067
 #, c-format
 msgid "%s was interrupted by an Interrupt Signal."
-msgstr "%s è stato fermato da un segnale d'interruzione"
+msgstr "%s è stato fermato da un segnale d'interruzione."
 
 #: src/bin/e_exec.c:1070
 #, c-format
 msgid "%s was interrupted by a Quit Signal."
-msgstr "%s è stato fermato da un segnale di uscita"
+msgstr "%s è stato fermato da un segnale di uscita."
 
 #: src/bin/e_exec.c:1074
 #, c-format
 msgid "%s was interrupted by an Abort Signal."
-msgstr "%s è stato fermato da un segnale di aborto"
+msgstr "%s è stato fermato da un segnale di aborto."
 
 #: src/bin/e_exec.c:1077
 #, c-format
 msgid "%s was interrupted by a Floating Point Error."
-msgstr "%s è stato fermato da un errore di virgola mobile"
+msgstr "%s è stato fermato da un errore di virgola mobile."
 
 #: src/bin/e_exec.c:1081
 #, c-format
 msgid "%s was interrupted by an Uninterruptable Kill Signal."
-msgstr "%s è stato fermato da un segnale di uccisione ininterrompibile"
+msgstr "%s è stato fermato da un segnale di uccisione ininterrompibile."
 
 #: src/bin/e_exec.c:1085
 #, c-format
 msgid "%s was interrupted by a Segmentation Fault."
-msgstr "%s è stato fermato da un errore di segmentazione"
+msgstr "%s è stato fermato da un errore di segmentazione."
 
 #: src/bin/e_exec.c:1089
 #, c-format
 msgid "%s was interrupted by a Broken Pipe."
-msgstr "%s è stato fermato da una pipe rotta"
+msgstr "%s è stato fermato da una pipe rotta."
 
 #: src/bin/e_exec.c:1092
 #, c-format
 msgid "%s was interrupted by a Termination Signal."
-msgstr "%s è stato fermato da un segnale di terminazione"
+msgstr "%s è stato fermato da un segnale di terminazione."
 
 #: src/bin/e_exec.c:1096
 #, c-format
 msgid "%s was interrupted by a Bus Error."
-msgstr "%s è stato fermato da un errore del bus"
+msgstr "%s è stato fermato da un errore del bus."
 
 #: src/bin/e_exec.c:1099
 #, c-format
 msgid "%s was interrupted by the signal number %i."
-msgstr "%s è stato fermato dal segnale numero %i"
+msgstr "%s è stato fermato dal segnale numero %i."
 
 #: src/bin/e_exec.c:1155
 msgid ""
@@ -1687,7 +1697,7 @@ msgid "Eject"
 msgstr "Espelli"
 
 #: src/bin/e_fm.c:9375 src/bin/e_int_client_remember.c:807
-#: src/modules/ibar/e_mod_main.c:1649
+#: src/modules/ibar/e_mod_main.c:1650
 msgid "Properties"
 msgstr "Proprietà"
 
@@ -1750,7 +1760,7 @@ msgstr "Sto già creando un file in questa directory!"
 #: src/bin/e_fm.c:9851 src/bin/e_fm.c:9872
 #, c-format
 msgid "%s can't be written to!"
-msgstr "Impossibile scrivere in %s"
+msgstr "Impossibile scrivere in %s!"
 
 #: src/bin/e_fm.c:9891
 msgid "Directory"
@@ -1973,7 +1983,7 @@ msgstr "Ultima modifica dei permessi:"
 
 #: src/bin/e_fm_prop.c:578
 msgid "File Type:"
-msgstr "Tipo di file"
+msgstr "Tipo di file:"
 
 #: src/bin/e_fm_prop.c:591
 msgid "Permissions"
@@ -2029,7 +2039,7 @@ msgstr "Informazioni collegamento"
 
 #: src/bin/e_fm_prop.c:703
 msgid "This link is broken."
-msgstr "Questo collegamento non funziona"
+msgstr "Questo collegamento non funziona."
 
 #: src/bin/e_fm_prop.c:758
 msgid "Select an Image"
@@ -2226,7 +2236,7 @@ msgstr "Impedisci la chiusura della finestrae"
 
 #: src/bin/e_int_client_locks.c:292
 msgid "Do not allow the border to change on this window"
-msgstr "impedisci le modifiche ai bordi della finestra"
+msgstr "Impedisci le modifiche ai bordi della finestra"
 
 #: src/bin/e_int_client_locks.c:295
 msgid "Remember the locks for this window"
@@ -2409,7 +2419,7 @@ msgstr "Blocchi"
 #: src/modules/conf_dialogs/e_int_config_dialogs.c:128
 #: src/modules/mixer/e_mod_config.c:446
 msgid "Remember"
-msgstr "Ricorda..."
+msgstr "Da ricordare"
 
 #: src/bin/e_int_client_menu.c:866
 msgid "ICCCM/NetWM"
@@ -2736,7 +2746,8 @@ msgstr "Richiede posizione"
 #: src/bin/e_int_client_prop.c:483 src/bin/e_int_client_prop.c:518
 #: src/bin/e_int_config_modules.c:58 src/bin/e_int_menus.c:299
 #: src/bin/e_shelf.c:2367 src/modules/backlight/e_mod_main.c:259
-#: src/modules/battery/e_mod_main.c:789 src/modules/clock/e_mod_main.c:360
+#: src/modules/battery/e_mod_main.c:789 src/modules/clipboard/e_mod_main.c:151
+#: src/modules/clipboard/e_mod_main.c:364 src/modules/clock/e_mod_main.c:360
 #: src/modules/clock/e_mod_main.c:599 src/modules/conf_dialogs/e_mod_main.c:17
 #: src/modules/conf/e_conf.c:115 src/modules/conf/e_conf.c:126
 #: src/modules/conf/e_mod_main.c:101
@@ -2746,12 +2757,14 @@ msgstr "Richiede posizione"
 #: src/modules/everything/evry_gadget.c:511
 #: src/modules/everything/evry_gadget.c:683
 #: src/modules/everything/evry_plug_settings.c:183
-#: src/modules/geolocation/e_mod_main.c:235 src/modules/ibar/e_mod_main.c:503
-#: src/modules/ibar/e_mod_main.c:1642 src/modules/ibox/e_mod_main.c:365
+#: src/modules/geolocation/e_mod_main.c:235 src/modules/ibar/e_mod_main.c:504
+#: src/modules/ibar/e_mod_main.c:1643 src/modules/ibox/e_mod_main.c:365
 #: src/modules/ibox/e_mod_main.c:857 src/modules/mixer/e_mod_main.c:1081
-#: src/modules/music-control/ui.c:359 src/modules/packagekit/e_mod_main.c:47
-#: src/modules/pager/e_mod_main.c:1026 src/modules/tasks/e_mod_main.c:995
-#: src/modules/temperature/e_mod_main.c:231
+#: src/modules/music-control/ui.c:359
+#: src/modules/networkmanager/e_mod_main.c:2139
+#: src/modules/networkmanager/e_mod_main.c:2993
+#: src/modules/packagekit/e_mod_main.c:47 src/modules/pager/e_mod_main.c:1026
+#: src/modules/tasks/e_mod_main.c:995 src/modules/temperature/e_mod_main.c:231
 #: src/modules/tiling/e_mod_tiling.c:2169 src/modules/wizard/page_150.c:31
 #: src/modules/xkbswitch/e_mod_main.c:308
 #: src/modules/xkbswitch/e_mod_main.c:436
@@ -2868,7 +2881,7 @@ msgstr "Tipo"
 
 #: src/bin/e_int_client_remember.c:741
 msgid "wildcard matches are allowed"
-msgstr "I caratteri jolly sono permessi"
+msgstr "i caratteri jolly sono permessi"
 
 #: src/bin/e_int_client_remember.c:743
 msgid "Transience"
@@ -4263,8 +4276,8 @@ msgid "Rename Shelf"
 msgstr "Rinomina mensola"
 
 #: src/bin/e_shelf.c:2362 src/modules/conf_shelves/e_int_config_shelf.c:145
-#: src/modules/ibar/e_mod_config.c:118 src/modules/ibar/e_mod_main.c:497
-#: src/modules/ibar/e_mod_main.c:1636
+#: src/modules/ibar/e_mod_config.c:118 src/modules/ibar/e_mod_main.c:498
+#: src/modules/ibar/e_mod_main.c:1637
 msgid "Contents"
 msgstr "Contenuti"
 
@@ -4991,6 +5004,14 @@ msgstr "Indicatore di carica"
 
 #: src/modules/bluez5/bz_agent.c:115 src/modules/bluez5/bz_agent.c:131
 #: src/modules/bluez5/bz_agent.c:285
+#: src/modules/networkmanager/e_mod_main.c:480
+#: src/modules/networkmanager/e_mod_main.c:492
+#: src/modules/networkmanager/e_mod_main.c:1507
+#: src/modules/networkmanager/e_mod_main.c:1848
+#: src/modules/networkmanager/e_mod_main.c:2333
+#: src/modules/networkmanager/e_mod_main.c:2339
+#: src/modules/networkmanager/e_networkmanager.c:2189
+#: src/modules/networkmanager/e_networkmanager.c:2192
 msgid "Bluetooth"
 msgstr "Bluetooth"
 
@@ -5179,6 +5200,61 @@ msgstr "Respingi associazione"
 #: src/modules/bluez5/e_mod_popup.c:720
 msgid "Options for device like connect, pair etc."
 msgstr "Opzioni per il dispositivo come connessione, associazione ecc."
+
+#: src/modules/clipboard/e_mod_config.c:108
+msgid "Clipboards"
+msgstr "Appunti"
+
+#: src/modules/clipboard/e_mod_config.c:109
+msgid " Use Copy (Ctrl-C)"
+msgstr "Usa comando copia (Ctrl-C)"
+
+#: src/modules/clipboard/e_mod_config.c:112
+msgid " Use Primary (Selection)"
+msgstr " Usa (selezione) primaria"
+
+#: src/modules/clipboard/e_mod_config.c:118
+msgid "History"
+msgstr "Cronologia"
+
+#: src/modules/clipboard/e_mod_config.c:120
+msgid " Reverse Order"
+msgstr " Inverti ordine"
+
+#: src/modules/clipboard/e_mod_config.c:123
+msgid " Items in History"
+msgstr "Oggetti in cronologia"
+
+#: src/modules/clipboard/e_mod_config.c:131
+msgid " Label Length"
+msgstr " Lunghezza etichetta"
+
+#: src/modules/clipboard/e_mod_config.c:157
+#: src/modules/clipboard/e_mod_main.c:536
+msgid "Clipboard Settings"
+msgstr "Impostazioni appunti"
+
+#: src/modules/clipboard/e_mod_main.c:351
+msgid "Clear"
+msgstr "Pulisci"
+
+#: src/modules/clipboard/e_mod_main.c:531
+#: src/modules/clipboard/e_mod_main.c:532
+#: src/modules/clipboard/e_mod_main.c:533
+msgid "Clipboard"
+msgstr "Appunti"
+
+#: src/modules/clipboard/e_mod_main.h:28
+msgid "Show History"
+msgstr "Mostra cronologia"
+
+#: src/modules/clipboard/e_mod_main.h:29
+msgid "Show Settings"
+msgstr "Mostra impostazioni"
+
+#: src/modules/clipboard/e_mod_main.h:30
+msgid "Clear History"
+msgstr "Pulisci cronologia"
 
 #: src/modules/clock/e_mod_config.c:36
 msgid "Clock Settings"
@@ -5585,7 +5661,7 @@ msgid ""
 "<hilight>Escape</hilight> to abort."
 msgstr ""
 "Causare l'evento ACPI che si desidera impostare,<ps/><ps/>o premere "
-"<hilight>Esc</hilight> per abortire"
+"<hilight>Esc</hilight> per abortire."
 
 #: src/modules/conf_bindings/e_int_config_edgebindings.c:5
 msgid ""
@@ -5652,7 +5728,7 @@ msgstr "Solo trascinamento"
 
 #: src/modules/conf_bindings/e_int_config_edgebindings.c:888
 msgid "No edge selected"
-msgstr "Nessun bordo selezionato."
+msgstr "Nessun bordo selezionato"
 
 #: src/modules/conf_bindings/e_int_config_edgebindings.c:1181
 msgid "Edge Binding Error"
@@ -5882,7 +5958,7 @@ msgid ""
 "hilight> action.<ps/>"
 msgstr ""
 "Il segnale e la sorgente che avete scelto è già usata dall'azione<ps/"
-"><hilight>%s</hilight>."
+"><hilight>%s</hilight>.<ps/>"
 
 #: src/modules/conf_bindings/e_int_config_signalbindings.c:621
 msgid "Add Signal Binding"
@@ -5937,7 +6013,7 @@ msgstr "Direzione strisciamento"
 msgid "Do your swipe gesture.<br><br>Press <hilight>Escape</hilight> to abort"
 msgstr ""
 "Eseguire un'azione di strisciamento.<ps/><ps/>Premere <hilight>Esc</hilight> "
-"per abortire."
+"per abortire"
 
 #: src/modules/conf_bindings/e_int_config_swipebindings.c:917
 msgid "Swipe Bindings Help"
@@ -7681,7 +7757,7 @@ msgstr "Elevazione automatica"
 
 #: src/modules/conf_window_manipulation/e_int_config_focus.c:292
 msgid "Delay before raising:"
-msgstr "Ritardo nell'elevazione"
+msgstr "Ritardo nell'elevazione:"
 
 #: src/modules/conf_window_manipulation/e_int_config_focus.c:301
 msgid "Raise Window"
@@ -7987,11 +8063,11 @@ msgstr "Accetta modifiche automaticamente dopo:"
 
 #: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:250
 msgid "Move by"
-msgstr "Sposta di:"
+msgstr "Sposta con"
 
 #: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:255
 msgid "Resize by"
-msgstr "Ridimensiona di:"
+msgstr "Ridimensiona con"
 
 #: src/modules/conf_window_manipulation/e_int_config_window_geometry.c:260
 #: src/modules/wizard/page_011.c:190 src/modules/xkbswitch/e_mod_main.c:78
@@ -8116,7 +8192,7 @@ msgstr "Dettagli"
 msgid "No selection"
 msgstr "Nessuna selezione"
 
-#: src/modules/connman/agent.c:226
+#: src/modules/connman/agent.c:226 src/modules/networkmanager/agent.c:366
 msgid "Show password"
 msgstr "Mostra password"
 
@@ -8165,6 +8241,14 @@ msgstr "Wifi attivo"
 msgid "Configure"
 msgstr "Configura"
 
+#: src/modules/convertible/e_mod_config.c:149
+msgid "Convertible Module"
+msgstr "Modulo Convertible"
+
+#: src/modules/convertible/e_mod_main.c:327
+msgid "Convertible"
+msgstr "Convertible"
+
 #: src/modules/cpufreq/e_mod_config.c:32
 msgid "Cpu Frequency Control Settings"
 msgstr "Impostazioni controllo frequenza CPU"
@@ -8190,6 +8274,7 @@ msgid "Low Power Level"
 msgstr "Livello potenza basso"
 
 #: src/modules/cpufreq/e_mod_config.c:209
+#: src/modules/networkmanager/e_mod_config.c:93
 msgid "Update Interval"
 msgstr "Intervallo aggiornamento"
 
@@ -9128,28 +9213,28 @@ msgstr ""
 msgid "Are you sure you want to delete this bar source?"
 msgstr "Siete sicuri di voler rimuovere questa sorgente per Ibar?"
 
-#: src/modules/ibar/e_mod_main.c:376 src/modules/ibar/e_mod_main.c:2950
+#: src/modules/ibar/e_mod_main.c:377 src/modules/ibar/e_mod_main.c:2951
 msgid "IBar"
 msgstr "IBar"
 
-#: src/modules/ibar/e_mod_main.c:486 src/modules/ibar/e_mod_main.c:1625
+#: src/modules/ibar/e_mod_main.c:487 src/modules/ibar/e_mod_main.c:1626
 msgid "Create new Icon"
 msgstr "Crea nuova icona"
 
-#: src/modules/ibar/e_mod_main.c:1656
+#: src/modules/ibar/e_mod_main.c:1657
 msgid "Add to bar"
 msgstr "Aggiungi alla barra"
 
-#: src/modules/ibar/e_mod_main.c:1662
+#: src/modules/ibar/e_mod_main.c:1663
 msgid "Remove from bar"
 msgstr "Elimina dalla barra"
 
-#: src/modules/ibar/e_mod_main.c:1668
+#: src/modules/ibar/e_mod_main.c:1669
 #, c-format
 msgid "Icon %s"
 msgstr "Icona %s"
 
-#: src/modules/ibar/e_mod_main.c:2950
+#: src/modules/ibar/e_mod_main.c:2951
 msgid "Focus IBar"
 msgstr "Fuoco di Ibar"
 
@@ -9358,6 +9443,218 @@ msgstr "Poni in pausa al blocco dello schermo"
 msgid "Music control Settings"
 msgstr "Impostazioni controllo musicale"
 
+#: src/modules/networkmanager/agent.c:206
+msgid "Secret"
+msgstr "Segreto"
+
+#: src/modules/networkmanager/agent.c:213
+#: src/modules/networkmanager/agent.c:214
+#: src/modules/networkmanager/e_networkmanager_vpn_username.c:249
+msgid "Username"
+msgstr "Nome utente"
+
+#: src/modules/networkmanager/agent.c:215
+#: src/modules/networkmanager/agent.c:218
+#: src/modules/networkmanager/agent.c:220
+#: src/modules/networkmanager/agent.c:343
+msgid "Password"
+msgstr "Password"
+
+#: src/modules/networkmanager/agent.c:216
+msgid "Certificate password"
+msgstr "Password del certificato"
+
+#: src/modules/networkmanager/agent.c:217
+msgid "HTTP proxy password"
+msgstr "Password del proxy HTTP"
+
+#: src/modules/networkmanager/agent.c:219
+#: src/modules/networkmanager/agent.c:221
+msgid "Group password"
+msgstr "Password del gruppo"
+
+#: src/modules/networkmanager/agent.c:222
+msgid "Gateway URL"
+msgstr "URL del gateway"
+
+#: src/modules/networkmanager/agent.c:223
+msgid "Cookie"
+msgstr "Cookie"
+
+#: src/modules/networkmanager/agent.c:224
+msgid "Gateway certificate hash"
+msgstr "Hash del certificato del gateway"
+
+#: src/modules/networkmanager/agent.c:225
+msgid "Gateway DNS resolution ('host:IP')"
+msgstr "Risoluzione DNS del gateway ('host:IP')"
+
+#: src/modules/networkmanager/agent.c:321
+msgid "WiFi Password Required"
+msgstr "Richiesta password WiFi"
+
+#: src/modules/networkmanager/agent.c:324
+#: src/modules/networkmanager/agent.c:439
+msgid "Connect"
+msgstr "Connetti"
+
+#: src/modules/networkmanager/agent.c:328
+#, c-format
+msgid "Password required for \"%s\":"
+msgstr "Password richiesta per \"%s\":"
+
+#: src/modules/networkmanager/agent.c:437
+msgid "VPN Authentication Required"
+msgstr "Richiesta autenticazione VPN"
+
+#: src/modules/networkmanager/e_mod_config.c:37
+msgid "NetworkManager Settings"
+msgstr "Impostazioni NetworkManager"
+
+#: src/modules/networkmanager/e_mod_config.c:105
+#: src/modules/shot/e_mod_delay.c:61
+#, c-format
+msgid "%1.1f sec"
+msgstr "%1.1f sec"
+
+#: src/modules/networkmanager/e_mod_main.c:15
+msgid "NetworkManager"
+msgstr "NetworkManager"
+
+#: src/modules/networkmanager/e_mod_main.c:420
+#: src/modules/networkmanager/e_mod_main.c:1434
+#: src/modules/networkmanager/e_mod_main.c:1451
+#: src/modules/networkmanager/e_mod_main.c:1716
+#: src/modules/networkmanager/e_mod_main.c:2316
+#: src/modules/networkmanager/e_networkmanager.c:2197
+#: src/modules/networkmanager/e_networkmanager.c:2200
+msgid "Wired"
+msgstr "Cablata"
+
+#: src/modules/networkmanager/e_mod_main.c:549
+msgid "VPN import failed"
+msgstr " Importazione VPN non riuscita"
+
+#: src/modules/networkmanager/e_mod_main.c:566
+msgid "Unknown error"
+msgstr "Errore sconosciuto"
+
+#: src/modules/networkmanager/e_mod_main.c:586
+msgid ""
+"Could not detect VPN type from file extension. Use a .conf (WireGuard) "
+"or .ovpn (OpenVPN) file."
+msgstr ""
+"Impossibile determinare il tipo di VPN dall'estensione del file. Usare un "
+"file .conf (WireGuard) o .ovpn (OpenVPN)."
+
+#: src/modules/networkmanager/e_mod_main.c:608
+msgid "Import VPN Configuration"
+msgstr "Importa configurazione VPN"
+
+#: src/modules/networkmanager/e_mod_main.c:630
+#: src/modules/networkmanager/e_mod_main.c:672
+#: src/modules/networkmanager/e_networkmanager_vpn_username.c:226
+msgid "VPN"
+msgstr "VPN"
+
+#: src/modules/networkmanager/e_mod_main.c:653
+msgid ""
+"nmcli not installed — install NetworkManager CLI tools to import VPN configs."
+msgstr ""
+"nmcli non è installato — installare gli strumenti per riga di comando di "
+"NetworkManager per importare configurazioni VPN."
+
+#: src/modules/networkmanager/e_mod_main.c:815
+msgid "Forget VPN"
+msgstr "Dimanetica VPN"
+
+#: src/modules/networkmanager/e_mod_main.c:817
+#, c-format
+msgid "Delete the VPN connection \"%s\"?  This cannot be undone."
+msgstr ""
+"Rimuovere la connessione a VPN \"%s\"?  Questo non può essere annullato."
+
+#: src/modules/networkmanager/e_mod_main.c:820
+#: src/modules/networkmanager/e_mod_main.c:879
+msgid "Forget"
+msgstr "Dimentica"
+
+#: src/modules/networkmanager/e_mod_main.c:870
+msgid "Connect automatically"
+msgstr "Connetti automaticamente"
+
+#: src/modules/networkmanager/e_mod_main.c:918
+msgid "Wireless"
+msgstr "Wireless"
+
+#: src/modules/networkmanager/e_mod_main.c:2523
+msgid "Unknown reason."
+msgstr "Motivo sconosciuto."
+
+#: src/modules/networkmanager/e_mod_main.c:2524
+msgid "Disconnected by user."
+msgstr "Disconnesso dall'utente:"
+
+#: src/modules/networkmanager/e_mod_main.c:2525
+msgid "Device disconnected."
+msgstr "Dispositivo disconnesso."
+
+#: src/modules/networkmanager/e_mod_main.c:2526
+msgid "Service stopped."
+msgstr "Servizio fermato."
+
+#: src/modules/networkmanager/e_mod_main.c:2527
+msgid "IP configuration is invalid."
+msgstr "La configurazione IP non è valida"
+
+#: src/modules/networkmanager/e_mod_main.c:2528
+msgid "Connection attempt timed out."
+msgstr "Tempo tentativo di connessione scaduto."
+
+#: src/modules/networkmanager/e_mod_main.c:2529
+msgid "Service start timeout."
+msgstr "Tempo avvio servizio scaduto."
+
+#: src/modules/networkmanager/e_mod_main.c:2530
+msgid "Service failed to start."
+msgstr "Il servizio non è partito."
+
+#: src/modules/networkmanager/e_mod_main.c:2531
+msgid "No valid VPN secrets."
+msgstr "Nessun segreto VPN valido."
+
+#: src/modules/networkmanager/e_mod_main.c:2532
+msgid "Invalid VPN secrets."
+msgstr "Segreto VPN non valido."
+
+#: src/modules/networkmanager/e_mod_main.c:2533
+msgid "Connection removed."
+msgstr "Connessione rimossa."
+
+#: src/modules/networkmanager/e_mod_main.c:2534
+msgid "Connection failed."
+msgstr "Connessione fallita."
+
+#: src/modules/networkmanager/e_mod_main.c:2555
+msgid "VPN connection failed"
+msgstr "Connessione VPN non riuscita"
+
+#: src/modules/networkmanager/e_networkmanager.c:2972
+msgid "NetworkManager Service Missing"
+msgstr "Servizio NetworkManager mancante"
+
+#: src/modules/networkmanager/e_networkmanager.c:2973
+msgid ""
+"The NetworkManager service is not available.<br>Is <b>NetworkManager</b> "
+"daemon running?"
+msgstr ""
+"Impossibile trovare il servizio NetworkManager.<br>Il demone "
+"<b>NetworkManager</b> è in esecuzione?"
+
+#: src/modules/networkmanager/e_networkmanager_vpn_username.c:220
+msgid "VPN Username Required"
+msgstr "Richiesto nome utente VPN"
+
 #: src/modules/notification/e_mod_config.c:51
 msgid "Notification Settings"
 msgstr "Impostazioni di Notification"
@@ -9440,7 +9737,7 @@ msgid ""
 "correctly installed and running"
 msgstr ""
 "Assicurarsi che non vi siano altri moduli che facciano da server e che D-Bus "
-"sia correttamente installato e in funzione."
+"sia correttamente installato e in funzione"
 
 #: src/modules/packagekit/e_mod_config.c:72
 msgid "Refresh Packages"
@@ -9691,6 +9988,10 @@ msgstr "Desktop successivo nel popup"
 #: src/modules/pager/e_mod_main.c:2146
 msgid "Popup Desk Previous"
 msgstr "Desktop precedente nel popup"
+
+#: src/modules/pants/e_mod_main.c:286
+msgid "Pants"
+msgstr "Pants"
 
 #: src/modules/polkit/auth_ui.c:95
 msgid "Please enter password"
@@ -10007,7 +10308,7 @@ msgstr ""
 
 #: src/modules/quickaccess/e_mod_quickaccess.c:1346
 msgid "quick access name/identifier"
-msgstr "Nome/identificatore Quickaccess"
+msgstr "nome/identificatore Quickaccess"
 
 #: src/modules/shot/e_mod_delay.c:47 src/modules/shot/e_mod_preview.c:74
 msgid "Select action to take with screenshot"
@@ -10016,11 +10317,6 @@ msgstr "Selezionare azione per screenshot"
 #: src/modules/shot/e_mod_delay.c:59 src/modules/shot/e_mod_preview.c:115
 msgid "Delay"
 msgstr "Ritardo"
-
-#: src/modules/shot/e_mod_delay.c:61
-#, c-format
-msgid "%1.1f sec"
-msgstr "%1.1f s"
 
 #: src/modules/shot/e_mod_edit.c:1962
 msgid "Tools"
@@ -10358,7 +10654,7 @@ msgstr "Abilità modalità divisione fluttuante"
 
 #: src/modules/tiling/e_mod_config.c:180
 msgid "Enable/disable tiling per desktop."
-msgstr "Abilita/disabilita griglia per desktop"
+msgstr "Abilita/disabilita griglia per desktop."
 
 #: src/modules/tiling/e_mod_config.c:213
 msgid "Padding between windows"
@@ -10410,7 +10706,7 @@ msgstr "Sposta finestra a fuoco a destra"
 
 #: src/modules/tiling/e_mod_tiling.c:1907
 msgid "Toggle split mode for new windows."
-msgstr "Commuta modalità divisione per le nuove finestre"
+msgstr "Commuta modalità divisione per le nuove finestre."
 
 #: src/modules/tiling/e_mod_tiling.c:1909
 msgid "Swap window"
@@ -10887,8 +11183,8 @@ msgstr "NESSUNA"
 
 #: src/modules/xwayland/e_mod_main.c:272
 msgid "Could not open X11 socket connection."
-msgstr "Impossibile aprire connessione a socket X11"
+msgstr "Impossibile aprire connessione a socket X11."
 
 #: src/modules/xwayland/e_mod_main.c:347
 msgid "Cannot launch XWayland from X11 display."
-msgstr "Impossibile lanciare XWayland dal display X11"
+msgstr "Impossibile lanciare XWayland dal display X11."
