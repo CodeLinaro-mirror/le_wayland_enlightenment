@@ -78,7 +78,7 @@ void ebluez5_agent_auth_service(Eldbus_Message *msg);
 
 Evas_Object *util_obj_icon_add(Evas_Object *base, Obj *o, int size);
 Evas_Object *util_obj_icon_rssi_add(Evas_Object *base, Obj *o, int size);
-Evas_Object *util_check_add(Evas_Object *base, const char *text, const char *tip, Eina_Bool state);
+Evas_Object *util_check_add(Evas_Object *base, const char *text, const char *icon, const char *tip, Eina_Bool state);
 Evas_Object *util_button_icon_add(Evas_Object *base, const char *icon, const char *tip);
 const char  *util_obj_name_get(Obj *o);
 

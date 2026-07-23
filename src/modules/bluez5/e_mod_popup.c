@@ -450,25 +450,29 @@ _cb_adapt_content_get(void *data EINA_UNUSED, Evas_Object *obj,
         evas_object_size_hint_weight_set(tab, EVAS_HINT_EXPAND, 0);
         evas_object_size_hint_align_set(tab, EVAS_HINT_FILL, 0.0);
 
-        ck = util_check_add(obj, _("Power"), _("Enable power for this adapter"),
+        ck = util_check_add(obj, NULL/*_("Power")*/, "power",
+                            _("Enable power for this adapter"),
                             o->powered);
         evas_object_smart_callback_add(ck, "changed", _cb_power, o);
         elm_table_pack(tab, ck, 0, 0, 1, 1);
         evas_object_show(ck);
 
-        ck = util_check_add(obj, _("Visible"), _("Make this adapter visible to other devices"),
+        ck = util_check_add(obj, NULL/*_("Visible")*/, "view",
+                            _("Make this adapter visible to other devices"),
                             o->discoverable);
         evas_object_smart_callback_add(ck, "changed", _cb_visible, o);
         elm_table_pack(tab, ck, 1, 0, 1, 1);
         evas_object_show(ck);
 
-        ck = util_check_add(obj, _("Scan"), _("Scan for other devices"),
+        ck = util_check_add(obj, NULL/*_("Scan")*/, "search",
+                            _("Scan for other devices"),
                             o->discovering);
         evas_object_smart_callback_add(ck, "changed", _cb_scan, o);
         elm_table_pack(tab, ck, 0, 1, 1, 1);
         evas_object_show(ck);
 
-        ck = util_check_add(obj, _("Pairable"), _("Allow this adapter to have other devices request to pair with it"),
+        ck = util_check_add(obj, NULL/*_("Pairable")*/, "pair",
+                            _("Allow this adapter to have other devices request to pair with it"),
                             o->pairable);
         evas_object_smart_callback_add(ck, "changed", _cb_pairable, o);
         elm_table_pack(tab, ck, 1, 1, 1, 1);

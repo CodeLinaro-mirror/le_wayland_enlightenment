@@ -229,14 +229,22 @@ util_obj_icon_rssi_add(Evas_Object *base, Obj *o, int size)
 }
 
 Evas_Object *
-util_check_add(Evas_Object *base, const char *text, const char *tip, Eina_Bool state)
+util_check_add(Evas_Object *base, const char *text, const char *icon, const char *tip, Eina_Bool state)
 {
-   Evas_Object *ck = elm_check_add(base);
-   evas_object_size_hint_align_set(ck, 0.0, EVAS_HINT_FILL);
-   elm_layout_text_set(ck, NULL, text);
-   elm_object_tooltip_text_set(ck, tip);
-   elm_check_state_set(ck, state);
-   return ck;
+  Evas_Object *ck = elm_check_add(base);
+  elm_object_style_set(ck, "plain");
+  evas_object_size_hint_align_set(ck, EVAS_HINT_FILL, EVAS_HINT_FILL);
+  elm_object_text_set(ck, text);
+  elm_object_tooltip_text_set(ck, tip);
+  elm_check_state_set(ck, state);
+  if (icon)
+    {
+      Evas_Object *ic = elm_icon_add(base);
+      elm_icon_standard_set(ic, icon);
+      elm_object_part_content_set(ck, NULL, ic);
+      evas_object_show(ic);
+    }
+  return ck;
 }
 
 Evas_Object *
