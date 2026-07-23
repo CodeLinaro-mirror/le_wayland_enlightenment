@@ -336,6 +336,53 @@ _enm_itc_item_del(void *data, Evas_Object *obj EINA_UNUSED)
    _enm_item_data_free(data);
 }
 
+static Evas_Object *
+_enm_icon_table_new(Evas_Object *parent, Evas_Object *icon)
+{
+   Evas_Object *tbl, *rect;
+
+   if (!icon) return NULL;
+
+   tbl = elm_table_add(parent);
+   if (!tbl)
+     {
+        evas_object_del(icon);
+        return NULL;
+     }
+
+   evas_object_show(icon);
+   elm_table_pack(tbl, icon, 0, 0, 1, 1);
+
+   rect = evas_object_rectangle_add(evas_object_evas_get(parent));
+   evas_object_color_set(rect, 0, 0, 0, 0);
+   evas_object_size_hint_min_set(rect, ELM_SCALE_SIZE(32),
+                                 ELM_SCALE_SIZE(32));
+   elm_table_pack(tbl, rect, 0, 0, 1, 1);
+
+   return tbl;
+}
+
+static Evas_Object *
+_enm_icon_button_new(Evas_Object *parent, const char *icon_name)
+{
+   Evas_Object *btn, *ic;
+
+   btn = elm_button_add(parent);
+   if (!btn) return NULL;
+
+   ic = elm_icon_add(btn);
+   if (!ic)
+     {
+        evas_object_del(btn);
+        return NULL;
+     }
+   elm_icon_standard_set(ic, icon_name);
+   elm_object_content_set(btn, ic);
+   evas_object_show(ic);
+
+   return btn;
+}
+
 /* Genlist text_get for AP rows: returns SSID on elm.text; on elm.text.sub
  * returns the assigned IP when this is the active AP, or the security type
  * otherwise. */
@@ -381,26 +428,10 @@ _enm_itc_ap_content_get(void *data, Evas_Object *obj, const char *part)
 
    if (!strcmp(part, "elm.swallow.icon"))
      {
-        Evas_Object *ic, *tbl, *rect;
-
-        tbl = elm_table_add(obj);
+        Evas_Object *ic;
 
         ic = _enm_ap_icon_new(id->nm, id->ap, obj);
-        if (!ic)
-          {
-             evas_object_del(tbl);
-             return NULL;
-          }
-        evas_object_show(ic);
-        elm_table_pack(tbl, ic, 0, 0, 1, 1);
-
-        rect = evas_object_rectangle_add(evas_object_evas_get(obj));
-        evas_object_color_set(rect, 0, 0, 0, 0);
-        evas_object_size_hint_min_set(rect, ELM_SCALE_SIZE(32),
-                                      ELM_SCALE_SIZE(32));
-        elm_table_pack(tbl, rect, 0, 0, 1, 1);
-
-        return tbl;
+        return _enm_icon_table_new(obj, ic);
      }
    if (!strcmp(part, "elm.swallow.end"))
      return _enm_ap_end_new(id->nm, id->ap, obj);
@@ -446,26 +477,10 @@ _enm_itc_eth_content_get(void *data, Evas_Object *obj, const char *part)
 
    if (!strcmp(part, "elm.swallow.icon"))
      {
-        Evas_Object *ic, *tbl, *rect;
-
-        tbl = elm_table_add(obj);
+        Evas_Object *ic;
 
         ic = _enm_eth_icon_new(id->dev, obj);
-        if (!ic)
-          {
-             evas_object_del(tbl);
-             return NULL;
-          }
-        evas_object_show(ic);
-        elm_table_pack(tbl, ic, 0, 0, 1, 1);
-
-        rect = evas_object_rectangle_add(evas_object_evas_get(obj));
-        evas_object_color_set(rect, 0, 0, 0, 0);
-        evas_object_size_hint_min_set(rect, ELM_SCALE_SIZE(32),
-                                      ELM_SCALE_SIZE(32));
-        elm_table_pack(tbl, rect, 0, 0, 1, 1);
-
-        return tbl;
+        return _enm_icon_table_new(obj, ic);
      }
    return NULL;
 }
@@ -504,26 +519,10 @@ _enm_itc_bt_content_get(void *data, Evas_Object *obj, const char *part)
 
    if (!strcmp(part, "elm.swallow.icon"))
      {
-        Evas_Object *ic, *tbl, *rect;
-
-        tbl = elm_table_add(obj);
+        Evas_Object *ic;
 
         ic = _enm_bt_icon_new(id->nm, id->bt, id->dev, obj);
-        if (!ic)
-          {
-             evas_object_del(tbl);
-             return NULL;
-          }
-        evas_object_show(ic);
-        elm_table_pack(tbl, ic, 0, 0, 1, 1);
-
-        rect = evas_object_rectangle_add(evas_object_evas_get(obj));
-        evas_object_color_set(rect, 0, 0, 0, 0);
-        evas_object_size_hint_min_set(rect, ELM_SCALE_SIZE(32),
-                                      ELM_SCALE_SIZE(32));
-        elm_table_pack(tbl, rect, 0, 0, 1, 1);
-
-        return tbl;
+        return _enm_icon_table_new(obj, ic);
      }
    return NULL;
 }
@@ -635,16 +634,12 @@ static Evas_Object *
 _enm_itc_group_vpn_content_get(void *data, Evas_Object *obj, const char *part)
 {
    E_NM_Instance *inst = data;
-   Evas_Object *btn, *o;
+   Evas_Object *btn;
 
    if (strcmp(part, "elm.swallow.end")) return NULL;
 
-   btn = elm_button_add(obj);
-
-   o = elm_icon_add(obj);
-   elm_icon_standard_set(o, "add");
-   elm_object_content_set(btn, o);
-   evas_object_show(o);
+   btn = _enm_icon_button_new(obj, "add");
+   if (!btn) return NULL;
 
    if (!enm_import_nmcli_path())
      {
@@ -708,11 +703,8 @@ _enm_itc_vpn_content_get(void *data, Evas_Object *obj, const char *part)
    if (!strcmp(part, "elm.swallow.end"))
      {
         /* Forget (delete) button — same edit-delete icon used by wifi rows. */
-        Evas_Object *btn = elm_button_add(obj);
-        Evas_Object *ic = elm_icon_add(btn);
-        elm_icon_standard_set(ic, "edit-delete");
-        elm_object_content_set(btn, ic);
-        evas_object_show(ic);
+        Evas_Object *btn = _enm_icon_button_new(obj, "edit-delete");
+        if (!btn) return NULL;
         evas_object_smart_callback_add(btn, "clicked",
                                        _enm_vpn_forget_btn_click_cb, vc);
         evas_object_data_set(btn, "instance", inst);
@@ -1249,7 +1241,7 @@ static Evas_Object *
 _enm_ap_end_new(struct NM_Manager *nm, struct NM_Access_Point *ap,
                 Evas_Object *parent)
 {
-   Evas_Object *end, *ic;
+   Evas_Object *end;
    const char *conn_path;
    struct _Enm_Forget_Data *fd;
 
@@ -1281,11 +1273,14 @@ _enm_ap_end_new(struct NM_Manager *nm, struct NM_Access_Point *ap,
      }
    fd->ssid = eina_stringshare_add(ap->ssid);
 
-   end = elm_button_add(parent);
-   ic = elm_icon_add(end);
-   elm_icon_standard_set(ic, "edit-delete");
-   elm_object_content_set(end, ic);
-   evas_object_show(ic);
+   end = _enm_icon_button_new(parent, "edit-delete");
+   if (!end)
+     {
+        eina_stringshare_del(fd->connection_path);
+        eina_stringshare_del(fd->ssid);
+        free(fd);
+        return NULL;
+     }
    evas_object_smart_callback_add(end, "clicked", _enm_forget_click_cb, fd);
    evas_object_event_callback_add(end, EVAS_CALLBACK_DEL,
                                   _enm_forget_data_free_cb, fd);
@@ -2026,12 +2021,30 @@ _enm_widget_size_wrap(E_NM_Instance *inst, Evas_Object *content,
    return tbl;
 }
 
+static Elm_Genlist_Item_Class *
+_enm_itc_new(const char *style,
+             char *(*text_get)(void *, Evas_Object *, const char *),
+             Evas_Object *(*content_get)(void *, Evas_Object *, const char *),
+             void (*del)(void *, Evas_Object *))
+{
+   Elm_Genlist_Item_Class *itc;
+
+   itc = elm_genlist_item_class_new();
+   if (!itc) return NULL;
+   itc->item_style = style;
+   itc->func.text_get = text_get;
+   itc->func.content_get = content_get;
+   itc->func.state_get = NULL;
+   itc->func.del = del;
+
+   return itc;
+}
+
 static void
 _enm_popup_new(E_NM_Instance *inst)
 {
    E_NM_Module_Context *ctxt = inst->ctxt;
    Evas_Object *box, *button, *gl, *icon;
-   Elm_Genlist_Item_Class *itc;
 
    EINA_SAFETY_ON_FALSE_RETURN(inst->popup == NULL);
 
@@ -2057,63 +2070,28 @@ _enm_popup_new(E_NM_Instance *inst)
    inst->ui.popup.genlist = gl;
 
    /* Item classes — created per-popup, freed in enm_popup_del */
-   itc = elm_genlist_item_class_new();
-   itc->item_style = "group_index";
-   itc->func.text_get = _enm_itc_group_text_get;
-   itc->func.content_get = NULL;
-   itc->func.state_get = NULL;
-   itc->func.del = NULL;
-   inst->ui.popup.itc_group = itc;
+   inst->ui.popup.itc_group = _enm_itc_new("group_index",
+      _enm_itc_group_text_get, NULL, NULL);
 
-   itc = elm_genlist_item_class_new();
-   itc->item_style = "group_index";
-   itc->func.text_get = _enm_itc_group_wifi_text_get;
-   itc->func.content_get = _enm_itc_group_wifi_content_get;
-   itc->func.state_get = NULL;
-   itc->func.del = NULL;
-   inst->ui.popup.itc_group_wifi = itc;
+   inst->ui.popup.itc_group_wifi = _enm_itc_new("group_index",
+      _enm_itc_group_wifi_text_get, _enm_itc_group_wifi_content_get, NULL);
 
-   itc = elm_genlist_item_class_new();
    /* double_label_blue: same layout as double_label but elm.text.sub is
     * rendered in wifi-band blue (51 153 255) so IPs stand out clearly. */
-   itc->item_style = "double_label";
-   itc->func.text_get = _enm_itc_ap_text_get;
-   itc->func.content_get = _enm_itc_ap_content_get;
-   itc->func.state_get = NULL;
-   itc->func.del = _enm_itc_item_del;
-   inst->ui.popup.itc_ap = itc;
+   inst->ui.popup.itc_ap = _enm_itc_new("double_label",
+      _enm_itc_ap_text_get, _enm_itc_ap_content_get, _enm_itc_item_del);
 
-   itc = elm_genlist_item_class_new();
-   itc->item_style = "double_label";
-   itc->func.text_get = _enm_itc_eth_text_get;
-   itc->func.content_get = _enm_itc_eth_content_get;
-   itc->func.state_get = NULL;
-   itc->func.del = _enm_itc_item_del;
-   inst->ui.popup.itc_eth = itc;
+   inst->ui.popup.itc_eth = _enm_itc_new("double_label",
+      _enm_itc_eth_text_get, _enm_itc_eth_content_get, _enm_itc_item_del);
 
-   itc = elm_genlist_item_class_new();
-   itc->item_style = "double_label";
-   itc->func.text_get = _enm_itc_bt_text_get;
-   itc->func.content_get = _enm_itc_bt_content_get;
-   itc->func.state_get = NULL;
-   itc->func.del = _enm_itc_item_del;
-   inst->ui.popup.itc_bt = itc;
+   inst->ui.popup.itc_bt = _enm_itc_new("double_label",
+      _enm_itc_bt_text_get, _enm_itc_bt_content_get, _enm_itc_item_del);
 
-   itc = elm_genlist_item_class_new();
-   itc->item_style = "group_index";
-   itc->func.text_get = _enm_itc_group_vpn_text_get;
-   itc->func.content_get = _enm_itc_group_vpn_content_get;
-   itc->func.state_get = NULL;
-   itc->func.del = NULL;
-   inst->ui.popup.itc_group_vpn = itc;
+   inst->ui.popup.itc_group_vpn = _enm_itc_new("group_index",
+      _enm_itc_group_vpn_text_get, _enm_itc_group_vpn_content_get, NULL);
 
-   itc = elm_genlist_item_class_new();
-   itc->item_style = "double_label";
-   itc->func.text_get = _enm_itc_vpn_text_get;
-   itc->func.content_get = _enm_itc_vpn_content_get;
-   itc->func.state_get = NULL;
-   itc->func.del = NULL;
-   inst->ui.popup.itc_vpn = itc;
+   inst->ui.popup.itc_vpn = _enm_itc_new("double_label",
+      _enm_itc_vpn_text_get, _enm_itc_vpn_content_get, NULL);
 
    /* Click signal for row tap -> connect/disconnect. Avoid using selection
     * callbacks here so already-selected active rows still react to clicks. */
