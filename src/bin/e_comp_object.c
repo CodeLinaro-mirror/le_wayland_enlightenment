@@ -3472,6 +3472,20 @@ e_comp_object_frame_geometry_set(Evas_Object *obj, int l, int r, int t, int b)
    cw->client_inset.r = r;
    cw->client_inset.t = t;
    cw->client_inset.b = b;
+   if ((!cw->ec->new_client) && (!cw->ec->fullscreen) &&
+       (cw->ec->maximized != E_MAXIMIZE_NONE))
+     {
+        Eina_Bool override;
+        int x, y, w, h;
+
+        if (e_client_maximize_geometry_get(cw->ec, cw->ec->maximized, &x, &y, &w, &h))
+          {
+             override = cw->ec->maximize_override;
+             cw->ec->maximize_override = 1;
+             evas_object_geometry_set(cw->ec->frame, x, y, w, h);
+             cw->ec->maximize_override = override;
+          }
+     }
    if (!cw->shobj) return;
    if (cw->client_inset.calc)
      e_comp_object_signal_emit(obj, "e,state,focus,disabled", "e");
