@@ -1738,16 +1738,40 @@ e_randr2_screen_dpi_get(E_Randr2_Screen *s)
    return (dpi1 + dpi2) / 2.0;
 }
 
+/* Lowest refresh we still treat as "full speed" - panels often report 59
+ * for a nominal 60Hz mode, so don't require a hard 60. */
+#define MODE_REFRESH_MIN 59.0
+
 static int
 _modelist_sort(const void *a, const void *b)
 {
    const E_Randr2_Mode *ma = a, *mb = b;
+   long long aa, ab;
+   Eina_Bool aok, bok;
 
-   /* largest resolutions first */
-   if ((ma->w * ma->h) > (mb->w * mb->h)) return -1;
-   /* highest refresh first */
-   if (ma->refresh > mb->refresh) return -1;
-   return 1;
+   /* largest resolutions first.
+    * NB: resolution must be decided before refresh is even looked at.
+    * Comparing refresh when the areas differ sorts e.g. 1280x720@120
+    * ahead of 1920x1080@60, which puts a smaller mode at the head of the
+    * list - and the head is what gets picked as a default. */
+   aa = (long long)ma->w * (long long)ma->h;
+   ab = (long long)mb->w * (long long)mb->h;
+   if (aa != ab) return (aa > ab) ? -1 : 1;
+
+   /* then a usable refresh rate ahead of things like 24Hz cinema modes */
+   aok = (ma->refresh >= MODE_REFRESH_MIN);
+   bok = (mb->refresh >= MODE_REFRESH_MIN);
+   if (aok != bok) return aok ? -1 : 1;
+
+   /* highest refresh first (refresh is a double, so allow some slop
+    * rather than comparing exactly) */
+   if (fabs(ma->refresh - mb->refresh) > 0.01)
+     return (ma->refresh > mb->refresh) ? -1 : 1;
+
+   /* let the display's own preferred timing break the tie */
+   if (ma->preferred != mb->preferred) return ma->preferred ? -1 : 1;
+
+   return 0;
 }
 
 EAPI void
