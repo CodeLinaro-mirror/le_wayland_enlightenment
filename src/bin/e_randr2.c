@@ -340,7 +340,10 @@ _do_apply(void)
    // e_randr2_init(), _do_apply() is called before e_comp->ee/evas exist,
    // so e_comp_canvas_update() would create broken zones with NULL evas
    // objects, causing duplicate zones and a black screen at startup.
-   if (e_comp->ee)
+   // test evas, not ee: the wl_drm backend creates e_comp->ee before it
+   // calls e_comp_wl_init() -> e_randr2_init(), and only sets e_comp->evas
+   // later in e_comp_canvas_init(). evas is what e_zone_new() needs.
+   if (e_comp->evas)
      {
         e_comp_canvas_resize(e_randr2->w, e_randr2->h);
         e_randr2_screens_setup(e_comp->w, e_comp->h);
