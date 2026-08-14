@@ -9,6 +9,115 @@ static Eldbus_Pending *pend_getobj = NULL;
 static Eina_Hash *obj_table = NULL;
 static void (*fn_obj_add) (Obj *o) = NULL;
 
+#define PAIR_FALLBACK_TIMEOUT 10.0
+
+typedef struct _Pair_Fallback Pair_Fallback;
+struct _Pair_Fallback
+{
+   const char *path;
+   const char *address;
+   Ecore_Timer *timer;
+   Eina_Bool saw_paired : 1;
+   Eina_Bool saw_connected : 1;
+};
+
+static Eina_List *pair_fallbacks = NULL;
+
+static Eina_Bool
+_pair_fallback_timeout(void *data)
+{
+   Pair_Fallback *fb = data;
+
+   pair_fallbacks = eina_list_remove(pair_fallbacks, fb);
+   eina_stringshare_del(fb->path);
+   eina_stringshare_del(fb->address);
+   free(fb);
+   return EINA_FALSE;
+}
+
+static Pair_Fallback *
+_pair_fallback_find(Obj *o)
+{
+   Pair_Fallback *fb;
+   Eina_List *l;
+
+   EINA_LIST_FOREACH(pair_fallbacks, l, fb)
+     {
+        if ((o->path) && (fb->path) && (!strcmp(o->path, fb->path)))
+          return fb;
+        if ((o->address) && (fb->address) &&
+            (!strcmp(o->address, fb->address)))
+          return fb;
+     }
+   return NULL;
+}
+
+static void
+_pair_fallback_free(Pair_Fallback *fb)
+{
+   if (!fb) return;
+   pair_fallbacks = eina_list_remove(pair_fallbacks, fb);
+   if (fb->timer) ecore_timer_del(fb->timer);
+   eina_stringshare_del(fb->path);
+   eina_stringshare_del(fb->address);
+   free(fb);
+}
+
+static void
+_pair_fallback_cancel(Obj *o)
+{
+   _pair_fallback_free(_pair_fallback_find(o));
+}
+
+static void
+_pair_fallback_start(Obj *o)
+{
+   Pair_Fallback *fb;
+
+   if (o->type != BZ_OBJ_DEVICE) return;
+   fb = _pair_fallback_find(o);
+   if (!fb)
+     {
+        fb = calloc(1, sizeof(Pair_Fallback));
+        if (!fb) return;
+        pair_fallbacks = eina_list_append(pair_fallbacks, fb);
+     }
+   eina_stringshare_replace(&(fb->path), o->path);
+   eina_stringshare_replace(&(fb->address), o->address);
+   if (fb->timer) ecore_timer_del(fb->timer);
+   fb->timer = ecore_timer_add(PAIR_FALLBACK_TIMEOUT,
+                               _pair_fallback_timeout, fb);
+   fb->saw_paired = o->paired;
+   fb->saw_connected = o->connected;
+}
+
+static void
+_pair_fallback_connect(Obj *o, const char *reason)
+{
+   Pair_Fallback *fb = _pair_fallback_find(o);
+
+   if ((!fb) || (!o->proxy)) return;
+   L("BZ: pair fallback connect %s after %s", o->address, reason);
+   _pair_fallback_free(fb);
+   bz_obj_connect(o);
+}
+
+static void
+_pair_fallback_props_update(Obj *o, Eina_Bool old_paired,
+                            Eina_Bool old_connected)
+{
+   Pair_Fallback *fb = _pair_fallback_find(o);
+
+   if (!fb) return;
+   if (o->paired) fb->saw_paired = EINA_TRUE;
+   if (o->connected) fb->saw_connected = EINA_TRUE;
+   if ((old_paired && (!o->paired)) ||
+       (old_connected && (!o->connected)) ||
+       (fb->saw_paired && (!o->paired)) ||
+       (fb->saw_connected && (!o->connected)))
+     _pair_fallback_connect(o, "device drop");
+}
+
 /*
 static void
 cb_obj_prop_mandata(void *data, const void *key, Eldbus_Message_Iter *var)
@@ -261,11 +370,14 @@ cb_obj_prop(void *data, const Eldbus_Message *msg, Eldbus_Pending *pending EINA_
 {
    Obj *o = data;
    Eldbus_Message_Iter *array;
+   Eina_Bool old_paired = o->paired;
+   Eina_Bool old_connected = o->connected;
 
    if (eldbus_message_error_get(msg, NULL, NULL)) return;
    _obj_clear(o);
    if (eldbus_message_arguments_get(msg, "a{sv}", &array))
      eldbus_message_iter_dict_iterate(array, "sv", cb_obj_prop_entry, o);
+   _pair_fallback_props_update(o, old_paired, old_connected);
    bz_obj_ref(o);
    if ((o->powered) && (o->path))
      {
@@ -583,6 +695,7 @@ void
 bz_obj_pair(Obj *o)
 {
    if (!o->proxy) return;
+   _pair_fallback_start(o);
    eldbus_proxy_call(o->proxy, "Pair", cb_pair, o, -1, "");
 }
 
@@ -596,6 +709,7 @@ void
 bz_obj_pair_cancel(Obj *o)
 {
    if (!o->proxy) return;
+   _pair_fallback_cancel(o);
    eldbus_proxy_call
      (o->proxy, "CancelPairing", cb_pair_cancel, o, -1, "");
 }
@@ -624,6 +738,7 @@ void
 bz_obj_disconnect(Obj *o)
 {
    if (!o->proxy) return;
+   _pair_fallback_cancel(o);
    eldbus_proxy_call
      (o->proxy, "Disconnect", cb_disconnect, o, -1, "");
 }
@@ -786,6 +901,7 @@ bz_obj_profile_disconnect(Obj *o, const char *uuid)
 void
 bz_obj_remove(Obj *o)
 {
+   _pair_fallback_cancel(o);
    if (o->adapter)
      {
         Obj *adapter = bz_obj_find(o->adapter);
@@ -856,6 +972,7 @@ bz_obj_unref(Obj *o)
         ecore_timer_del(o->power_retry_timer);
         o->power_retry_timer = NULL;
      }
+   _pair_fallback_cancel(o);
    if (o->proxy)
      {
         eldbus_proxy_unref(o->proxy);
@@ -979,6 +1096,7 @@ cb_obj_del(void *data EINA_UNUSED, const Eldbus_Message *msg)
    if (o)
      { // check if a prop fetch errs or is ok to check its really gone
         L("BZ: cb_obj_del [%s] %p ref=%i", path, o, o->ref);
+        _pair_fallback_connect(o, "device remove");
         _obj_del_inside++;
         bz_obj_ref(o);
         eldbus_proxy_property_get_all(o->proxy, cb_obj_del_prop, o);
@@ -1048,7 +1166,11 @@ bz_obj_init(void)
 void
 bz_obj_shutdown(void)
 {
+   Pair_Fallback *fb;
+
    L("BZ: bz_obj_shutdown");
+   while ((fb = eina_list_data_get(pair_fallbacks)))
+     _pair_fallback_free(fb);
    eina_hash_free(obj_table);
    obj_table = NULL;
    if (pend_getobj)
