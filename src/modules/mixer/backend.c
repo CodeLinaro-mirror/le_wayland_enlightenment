@@ -628,6 +628,7 @@ _disconnected(void)
         e_client_volume_sink_del(sink);
      }
    _sink_default = NULL;
+   _source_default = NULL;
    _restored = EINA_FALSE;
    _backend_changed();
 }
@@ -637,6 +638,10 @@ static void
 _ready(void)
 {
    _backend_init_flag = EINA_TRUE;
+   if (emix_source_default_support())
+     _source_default = emix_source_default_get();
+   else
+     _source_default = eina_list_data_get(emix_sources_get());
    if (emix_sink_default_support())
      _sink_default = emix_sink_default_get();
    else
@@ -1427,8 +1432,11 @@ _bd_hook(void *data EINA_UNUSED, E_Client *ec)
 }
 
 static Eina_Bool
-_emixer_del_cb(void *data EINA_UNUSED, int type EINA_UNUSED,  void *info EINA_UNUSED)
+_emixer_del_cb(void *data EINA_UNUSED, int type EINA_UNUSED, void *info)
 {
+   Ecore_Exe_Event_Del *ev = info;
+
+   if (ev->exe != _emixer_exe) return ECORE_CALLBACK_PASS_ON;
    _emixer_exe = NULL;
    if (_emix_exe_event_del_handler)
      {
@@ -1528,7 +1536,7 @@ backend_shutdown(void)
    E_Client_Volume_Sink *sink;
    Client_Mixer *cm;
 
-   if (!--_volume_init) return _volume_init;
+   if (--_volume_init) return _volume_init;
 
    E_FREE_LIST(_client_handlers, ecore_event_handler_del);
    EINA_LIST_FREE(_client_mixers, cm)
@@ -1563,9 +1571,21 @@ backend_shutdown(void)
 EINTERN void
 backend_emixer_exec(void)
 {
+   const Eina_List *l;
+   const char *name, *backend = emix_config_backend_get();
+   char cmd[128];
+
    if (_emixer_exe) return;
 
-   _emixer_exe = e_util_exe_safe_run("emixer", NULL);
+   snprintf(cmd, sizeof(cmd), "emixer");
+   EINA_LIST_FOREACH(emix_backends_available(), l, name)
+     {
+        if ((!backend) || strcmp(backend, name)) continue;
+        snprintf(cmd, sizeof(cmd), "emixer %s%s", name,
+                 emix_autostart_get() ? "" : " --no-autostart");
+        break;
+     }
+   _emixer_exe = e_util_exe_safe_run(cmd, NULL);
    if (_emix_exe_event_del_handler)
       ecore_event_handler_del(_emix_exe_event_del_handler);
    _emix_exe_event_del_handler =

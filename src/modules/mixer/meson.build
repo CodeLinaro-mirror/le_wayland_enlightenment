@@ -16,12 +16,14 @@ if get_option(m) == true
   dep_alsa         = dependency('alsa', version: '>= 1.0.8', required: false)
   dep_pulse        = dependency('libpulse', required: false)
   dep_pulse_simple = dependency('libpulse-simple', required: false)
+  dep_pipewire     = dependency('libpipewire-0.3', version: '>= 0.3.65', required: false)
 
-  deps += [ dep_alsa, dep_pulse, dep_pulse_simple ]
+  deps += [ dep_alsa, dep_pulse, dep_pulse_simple, dep_pipewire ]
   inc = [ 'lib' ]
 
   config_h.set('HAVE_ALSA' , dep_alsa.found())
   config_h.set('HAVE_PULSE', dep_pulse.found() and dep_pulse_simple.found())
+  config_h.set('HAVE_PIPEWIRE', dep_pipewire.found())
 
   if config_h.get('HAVE_ALSA') == true
     mixer_lib += files(
@@ -34,7 +36,10 @@ if get_option(m) == true
       'lib/backends/pulseaudio/pulse.c'
     )
   endif
-  if config_h.has('HAVE_PULSE') == false and config_h.has('HAVE_ALSA') == false
+  if config_h.get('HAVE_PIPEWIRE') == true
+    mixer_lib += files('lib/backends/pipewire/pipewire.c')
+  endif
+  if not config_h.get('HAVE_PULSE') and not config_h.get('HAVE_ALSA') and not config_h.get('HAVE_PIPEWIRE')
     error('mixer support requested, but no backends found!')
   endif
 

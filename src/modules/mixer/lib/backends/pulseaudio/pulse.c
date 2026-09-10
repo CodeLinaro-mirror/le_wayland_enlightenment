@@ -1516,7 +1516,9 @@ _pulse_connect(void *data)
    if (c->context)
      {
         pa_context_set_state_callback(c->context, _pulse_pa_state_cb, c);
-        if (pa_context_connect(c->context, NULL, PA_CONTEXT_NOFLAGS, NULL) < 0)
+        if (pa_context_connect(c->context, NULL,
+                               emix_autostart_get() ? PA_CONTEXT_NOFLAGS :
+                               PA_CONTEXT_NOAUTOSPAWN, NULL) < 0)
           {
              ret = EINA_TRUE;
              ERR("Could not connect to pulse");
@@ -1581,9 +1583,11 @@ _init(Emix_Event_Cb cb, const void *data)
 
    if (_pulse_connect(ctx) == EINA_TRUE) // true == failed and try again
      {
-        if (!pulse_started)
-          ecore_exe_run("pulseaudio --start", NULL);
-        pulse_started = EINA_TRUE;
+        if ((!pulse_started) && emix_autostart_get())
+          {
+             ecore_exe_run("pulseaudio --start", NULL);
+             pulse_started = EINA_TRUE;
+          }
      }
 
    ctx->cb = cb;

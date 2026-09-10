@@ -13,6 +13,10 @@ E_API extern const char *emix_backend_pulse_name;
 E_API Emix_Backend      *emix_backend_alsa_get(void);
 E_API extern const char *emix_backend_alsa_name;
 #endif
+#ifdef HAVE_PIPEWIRE
+E_API Emix_Backend      *emix_backend_pipewire_get(void);
+E_API extern const char *emix_backend_pipewire_name;
+#endif
 
 static int _log_domain;
 
@@ -47,6 +51,19 @@ typedef struct _Back
 
 static int _init_count = 0;
 static Context *ctx = NULL;
+static Eina_Bool _autostart = EINA_TRUE;
+
+void
+emix_autostart_set(Eina_Bool enable)
+{
+   _autostart = !!enable;
+}
+
+Eina_Bool
+emix_autostart_get(void)
+{
+   return _autostart;
+}
 
 static void
 _events_cb(void *data EINA_UNUSED, enum Emix_Event event, void *event_info)
@@ -103,6 +120,17 @@ emix_init(void)
                                                back->backend_name);
      }
 #endif
+#ifdef HAVE_PIPEWIRE
+   back = calloc(1, sizeof(Back));
+   if (back)
+     {
+        back->backend_get = emix_backend_pipewire_get;
+        back->backend_name = emix_backend_pipewire_name;
+        eina_array_push(ctx->backends, back);
+        ctx->backends_names = eina_list_append(ctx->backends_names,
+                                             back->backend_name);
+     }
+#endif
 #ifdef HAVE_ALSA
    back = calloc(1, sizeof(Back));
    if (back)
@@ -141,6 +169,7 @@ emix_shutdown()
    unsigned int i;
    Eina_Array_Iterator iterator;
    Back *back;
+   struct Callback_Data *callback;
 
    if (_init_count == 0)
       return;
@@ -158,10 +187,13 @@ emix_shutdown()
         free(back);
      }
    eina_array_free(ctx->backends);
+   EINA_LIST_FREE(ctx->callbacks, callback)
+     free(callback);
    free(ctx);
    ctx = NULL;
 
    ecore_shutdown();
+   eina_log_domain_unregister(_log_domain);
    eina_shutdown();
 }
 
@@ -528,4 +560,3 @@ emix_source_monitor(Emix_Source *source, Eina_Bool monitor)
    if (!ctx->loaded->ebackend_source_monitor_set) return;
    ctx->loaded->ebackend_source_monitor_set(source, monitor);
 }
-

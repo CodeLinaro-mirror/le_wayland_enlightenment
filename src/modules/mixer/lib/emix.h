@@ -194,6 +194,8 @@ E_API Eina_Bool           emix_init(void);
 E_API void                emix_shutdown(void);
 E_API const Eina_List*    emix_backends_available(void);
 E_API Eina_Bool           emix_backend_set(const char *backend);
+E_API void                emix_autostart_set(Eina_Bool enable);
+E_API Eina_Bool           emix_autostart_get(void);
 
 E_API Eina_Bool           emix_event_callback_add(Emix_Event_Cb cb,
                                                   const void *data);

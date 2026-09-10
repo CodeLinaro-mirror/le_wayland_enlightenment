@@ -8,6 +8,7 @@ typedef struct _Emix_Config
    const char *backend;
    int notify;
    int mute;
+   int no_autostart;
 
    int save;
    const char *save_sink;
@@ -48,6 +49,7 @@ struct _E_Config_Dialog_Data
    Emix_Config config;
    Evas_Object *list;
    Evas_Object *sources;
+   int autostart;
 };
 
 static E_Config_DD *cd, *c_portd, *c_sinkd, *c_sourced;
@@ -78,6 +80,7 @@ _emix_config_dd_new(void)
    E_CONFIG_VAL(cd, Emix_Config, backend, STR);
    E_CONFIG_VAL(cd, Emix_Config, notify, INT);
    E_CONFIG_VAL(cd, Emix_Config, mute, INT);
+   E_CONFIG_VAL(cd, Emix_Config, no_autostart, INT);
 
    E_CONFIG_VAL(cd, Emix_Config, save, INT);
    E_CONFIG_VAL(cd, Emix_Config, save_sink, STR);
@@ -119,13 +122,15 @@ _config_set(Emix_Config *config)
 
    _config->notify = config->notify;
    _config->mute = config->mute;
+   _config->no_autostart = config->no_autostart;
+   emix_autostart_set(!_config->no_autostart);
 
    if (config->save == 0) _config->save = -1;
    else if (config->save == 1) _config->save = 1;
 
    DBG("SAVING CONFIG %s %d %d", _config->backend, config->notify,
        config->mute);
-   e_config_domain_save("module.emix", cd, config);
+   e_config_domain_save("module.emix", cd, _config);
 }
 
 void
@@ -165,6 +170,7 @@ emix_config_init(emix_config_backend_changed cb, const void *userdata)
 
    _config->cb = cb;
    _config->userdata = userdata;
+   emix_autostart_set(!_config->no_autostart);
    DBG("Config loaded, backend to use: %s", _config->backend);
 }
 
@@ -412,6 +418,7 @@ _create_data(E_Config_Dialog *cfg EINA_UNUSED)
    d->config.backend = eina_stringshare_add(_config->backend);
    d->config.notify = _config->notify;
    d->config.mute = _config->mute;
+   d->autostart = !_config->no_autostart;
 
    if (_config->save == -1) d->config.save = 0;
    else d->config.save = 1;
@@ -455,13 +462,18 @@ _basic_create_widgets(E_Config_Dialog *cfd EINA_UNUSED, Evas *evas,
    EINA_LIST_FOREACH(emix_backends_available(), node, name)
      {
         e_widget_ilist_append(l, NULL, name, NULL, NULL, NULL);
-        i ++;
         if (_config->backend && !strcmp(_config->backend, name))
           e_widget_ilist_selected_set(l, i);
+        i++;
      }
    e_widget_ilist_go(l);
    e_widget_ilist_thaw(l);
    e_widget_list_object_append(o, l, 1, 1, 0);
+
+   l = e_widget_check_add(evas,
+                         _("Start the selected sound server if needed"),
+                         &cfdata->autostart);
+   e_widget_list_object_append(o, l, 0, 0, 0);
 
    return o;
 }
@@ -470,14 +482,20 @@ static int
 _basic_apply_data(E_Config_Dialog *cfd EINA_UNUSED,
                   E_Config_Dialog_Data *cfdata)
 {
+   Eina_Bool backend_changed;
    char *new_backend = eina_list_nth(
                             emix_backends_available(),
                             e_widget_ilist_selected_get(cfdata->list));
 
+   if (!new_backend) return 0;
+   backend_changed = (!_config->backend) ||
+     strcmp(_config->backend, new_backend) ||
+     (_config->no_autostart != !cfdata->autostart);
    eina_stringshare_replace(&cfdata->config.backend, new_backend);
+   cfdata->config.no_autostart = !cfdata->autostart;
 
    _config_set(&cfdata->config);
-   if (_config->cb)
+   if (backend_changed && _config->cb)
       _config->cb(new_backend, (void *)_config->userdata);
    return 1;
 }

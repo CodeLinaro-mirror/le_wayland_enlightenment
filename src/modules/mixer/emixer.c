@@ -1110,7 +1110,12 @@ _emix_sink_input_change(Emix_Sink_Input *input)
      {
         if (evas_object_data_get(fr, "input") == input) break;
      }
-   if (!l) return;
+   if (!l)
+     {
+        /* PipeWire can announce a stream before its sink link is ready. */
+        _emix_sink_input_add(input);
+        return;
+     }
    hv = evas_object_data_get(fr, "port");
    elm_hoversel_clear(hv);
    EINA_LIST_FOREACH(emix_sinks_get(), l, sink)
@@ -1928,6 +1933,8 @@ elm_main(int argc, char **argv)
 
    emix_init();
    if (argc > 1) back = argv[1];
+   if ((argc > 2) && !strcmp(argv[2], "--no-autostart"))
+     emix_autostart_set(EINA_FALSE);
    if (!_backend_init(back)) goto done;
    _event_init();
 
