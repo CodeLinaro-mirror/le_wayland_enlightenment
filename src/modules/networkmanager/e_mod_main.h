@@ -72,6 +72,7 @@ struct E_NM_Module_Context
    Eina_List          *instances;
    E_Config_Dialog    *conf_dialog;
    Ecore_Timer        *popup_update_timer;
+   Ecore_Timer        *connection_timer;
    Ecore_Job          *vpn_update_job;   /* deferred VPN-active-changed notify */
 
    struct NM_Manager  *nm;
@@ -91,6 +92,10 @@ struct E_NM_Module_Context
    int                  rx_level;        /* 0=idle, 1=low, 2=medium, 3=high */
    int                  tx_level;
    Eina_Bool            powersave_high : 1;
+   Eina_Bool            connected : 1;
+   Eina_Bool            online : 1;
+   Eina_Bool            pending_connected : 1;
+   Eina_Bool            pending_online : 1;
 };
 
 E_API extern E_Module_Api e_modapi;

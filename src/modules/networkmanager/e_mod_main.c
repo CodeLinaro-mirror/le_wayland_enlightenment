@@ -2415,6 +2415,60 @@ _enm_mod_manager_update_inst(E_NM_Module_Context *ctxt EINA_UNUSED,
  */
 }
 
+/* Connection hooks.  Called after overall connectivity has settled,
+ * including changes in Internet access while a network remains connected. */
+static void
+_enm_connected(Eina_Bool online)
+{
+   INF("Network connected (online=%d)", online);
+}
+
+static void
+_enm_disconnected(void)
+{
+   INF("Network disconnected");
+}
+
+static Eina_Bool
+_enm_connection_timer_cb(void *data)
+{
+   E_NM_Module_Context *ctxt = data;
+
+   ctxt->connection_timer = NULL;
+   ctxt->connected = ctxt->pending_connected;
+   ctxt->online = ctxt->pending_online;
+   if (ctxt->connected) _enm_connected(ctxt->online);
+   else _enm_disconnected();
+
+   return ECORE_CALLBACK_CANCEL;
+}
+
+static void
+_enm_connection_state_update(E_NM_Module_Context *ctxt, enum NM_State state)
+{
+   Eina_Bool connected, online;
+
+   connected = (state == NM_STATE_CONNECTED_LOCAL) ||
+               (state == NM_STATE_CONNECTED_SITE) ||
+               (state == NM_STATE_CONNECTED_GLOBAL);
+   /* NM's global state reports Internet access; local/site are connected
+    * networks without global connectivity. */
+   online = (state == NM_STATE_CONNECTED_GLOBAL);
+   /* Routine manager updates must not postpone a pending notification. */
+   if ((ctxt->pending_connected == connected) &&
+       (ctxt->pending_online == online)) return;
+
+   ctxt->pending_connected = connected;
+   ctxt->pending_online = online;
+   E_FREE_FUNC(ctxt->connection_timer, ecore_timer_del);
+
+   /* A brief excursion back to the last reported state needs no callback. */
+   if ((ctxt->connected == connected) && (ctxt->online == online)) return;
+
+   /* Wait for two seconds without a connectivity change before reporting. */
+   ctxt->connection_timer = ecore_timer_add(2.0, _enm_connection_timer_cb, ctxt);
+}
+
 static void
 _enm_mod_manager_update(struct NM_Manager *nm)
 {
@@ -2423,6 +2477,8 @@ _enm_mod_manager_update(struct NM_Manager *nm)
    Eina_List *l;
 
    EINA_SAFETY_ON_NULL_RETURN(nm);
+
+   _enm_connection_state_update(ctxt, nm->state);
 
    EINA_LIST_FOREACH(ctxt->instances, l, inst)
      _enm_mod_manager_update_inst(ctxt, inst, nm, nm->state);
@@ -2456,7 +2512,10 @@ _enm_mod_manager_inout(struct NM_Manager *nm)
         enm_saved_connections_get(nm);
      }
    else
-     _enm_traffic_timer_stop(ctxt);
+     {
+        _enm_connection_state_update(ctxt, NM_STATE_UNKNOWN);
+        _enm_traffic_timer_stop(ctxt);
+     }
 }
 
 static void
@@ -3263,6 +3322,7 @@ e_modapi_shutdown(E_Module *m)
    e_gadcon_provider_unregister(&_gc_class);
 
    E_FREE_FUNC(ctxt->popup_update_timer, ecore_timer_del);
+   E_FREE_FUNC(ctxt->connection_timer, ecore_timer_del);
    E_FREE_FUNC(ctxt->vpn_update_job, ecore_job_del);
    _enm_traffic_timer_stop(ctxt);
    E_FREE_FUNC(ctxt->powersave_handler, ecore_event_handler_del);
