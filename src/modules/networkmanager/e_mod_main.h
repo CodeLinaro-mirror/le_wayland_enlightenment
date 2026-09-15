@@ -4,6 +4,7 @@
 #include <e.h>
 
 #include "e_networkmanager.h"
+#include "e_networkmanager_online.h"
 
 #define AGENT_PATH "/org/freedesktop/NetworkManager/SecretAgent"
 #define NETWORKMANAGER_CONFIG_VERSION 1
@@ -76,6 +77,7 @@ struct E_NM_Module_Context
    Ecore_Job          *vpn_update_job;   /* deferred VPN-active-changed notify */
 
    struct NM_Manager  *nm;
+   Enm_Online_Check   *online_check;
 
    /* Network activity indicator.  Polling happens on a background thread
     * via ecore_thread_feedback_run; samples are delivered back to the main

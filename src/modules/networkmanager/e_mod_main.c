@@ -2420,13 +2420,29 @@ _enm_mod_manager_update_inst(E_NM_Module_Context *ctxt EINA_UNUSED,
 static void
 _enm_connected(Eina_Bool online)
 {
+   E_NM_Module_Context *ctxt = networkmanager_mod->data;
+
    INF("Network connected (online=%d)", online);
+   if (online) enm_online_check_stop(ctxt->online_check);
+   else enm_online_check_start(ctxt->online_check);
 }
 
 static void
 _enm_disconnected(void)
 {
+   E_NM_Module_Context *ctxt = networkmanager_mod->data;
+
    INF("Network disconnected");
+   enm_online_check_stop(ctxt->online_check);
+}
+
+static void
+_enm_online_check_done(void *data, Eina_Bool online)
+{
+   E_NM_Module_Context *ctxt = data;
+
+   ctxt->online = online;
+   _enm_connected(online);
 }
 
 static Eina_Bool
@@ -2460,6 +2476,7 @@ _enm_connection_state_update(E_NM_Module_Context *ctxt, enum NM_State state)
 
    ctxt->pending_connected = connected;
    ctxt->pending_online = online;
+   enm_online_check_state_set(ctxt->online_check, connected, online);
    E_FREE_FUNC(ctxt->connection_timer, ecore_timer_del);
 
    /* A brief excursion back to the last reported state needs no callback. */
@@ -3254,6 +3271,9 @@ e_modapi_init(E_Module *m)
    ctxt = E_NEW(E_NM_Module_Context, 1);
    if (!ctxt) goto error_nm_context;
 
+   ctxt->online_check = enm_online_check_new(_enm_online_check_done, ctxt);
+   if (!ctxt->online_check) goto error_nm_system_init;
+
    ctxt->pipe_fd = -1;
    ctxt->poll_time = networkmanager_config->poll_time;
    e_nm_module_callbacks_set(&_enm_mod_cbs);
@@ -3277,6 +3297,7 @@ e_modapi_init(E_Module *m)
    return ctxt;
 
 error_nm_system_init:
+   enm_online_check_free(ctxt->online_check);
    E_FREE(ctxt);
 error_nm_context:
    eina_log_domain_unregister(_e_nm_log_dom);
@@ -3324,6 +3345,7 @@ e_modapi_shutdown(E_Module *m)
    E_FREE_FUNC(ctxt->popup_update_timer, ecore_timer_del);
    E_FREE_FUNC(ctxt->connection_timer, ecore_timer_del);
    E_FREE_FUNC(ctxt->vpn_update_job, ecore_job_del);
+   E_FREE_FUNC(ctxt->online_check, enm_online_check_free);
    _enm_traffic_timer_stop(ctxt);
    E_FREE_FUNC(ctxt->powersave_handler, ecore_event_handler_del);
    E_FREE(ctxt);

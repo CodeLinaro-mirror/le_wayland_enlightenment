@@ -4,6 +4,8 @@ src = files(
   'agent.c',
   'e_networkmanager.c',
   'e_networkmanager.h',
+  'e_networkmanager_online.c',
+  'e_networkmanager_online.h',
   'e_networkmanager_vpn.c',
   'e_networkmanager_vpn.h',
   'e_networkmanager_import.c',
