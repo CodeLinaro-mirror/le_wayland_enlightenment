@@ -541,7 +541,7 @@ _enm_vpn_import_done_cb(void *data, Eina_Bool ok, const char *err,
         return;
      }
 
-   ERR("VPN import failed: %s", err ?: "(no output)");
+   L("NM: VPN import failed: %s", err ?: "(no output)");
 
    err_dlg = e_dialog_new(NULL, "E", "nm_vpn_import_error");
    if (!err_dlg) return;
@@ -1027,14 +1027,14 @@ _enm_item_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
               * activates.  Mirrors the wifi/ethernet row-tap UX. */
              if (vc->active_path)
                {
-                  INF("VPN row tapped (active): deactivating '%s'\n",
-                      vc->name ?: "?");
+                  L("NM: VPN row tapped (active): deactivating '%s'",
+                    vc->name ?: "?");
                   if (!selected) enm_vpn_deactivate(ctxt->nm, vc);
                }
              else
                {
-                  INF("VPN row tapped (inactive): activating '%s'",
-                      vc->name ?: "?");
+                  L("NM: VPN row tapped (inactive): activating '%s'",
+                    vc->name ?: "?");
                   if (selected) enm_vpn_activate(ctxt->nm, vc);
                }
           }
@@ -1055,17 +1055,17 @@ _enm_item_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
         if (nm->active_conn_type == NM_DEVICE_TYPE_BLUETOOTH &&
             id->dev->state >= NM_DEVICE_STATE_ACTIVATED)
           {
-             INF("Disconnect bluetooth connection %s",
-                 id->bt->name ?: id->connection_path);
+             L("NM: Disconnect bluetooth connection %s",
+               id->bt->name ?: id->connection_path);
              if (!selected) enm_ap_disconnect(nm);
           }
         else
           {
              enm_disconnect_type(nm, NM_DEVICE_TYPE_ETHERNET);
              enm_disconnect_type(nm, NM_DEVICE_TYPE_WIFI);
-             INF("Connect bluetooth profile %s on device %s",
-                 id->bt->name ?: id->connection_path,
-                 id->dev->interface ?: id->dev->path);
+             L("NM: Connect bluetooth profile %s on device %s",
+               id->bt->name ?: id->connection_path,
+               id->dev->interface ?: id->dev->path);
              if (selected) enm_bluetooth_connect(nm, id->dev, id->connection_path);
           }
         return;
@@ -1078,16 +1078,16 @@ _enm_item_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
         if (id->dev->state >= NM_DEVICE_STATE_ACTIVATED &&
             id->dev->active_conn_path)
           {
-             INF("Disconnect ethernet device %s",
-                 id->dev->interface ?: id->dev->path);
+             L("NM: Disconnect ethernet device %s",
+               id->dev->interface ?: id->dev->path);
              if (!selected) enm_disconnect_type(nm, NM_DEVICE_TYPE_ETHERNET);
           }
         else
           {
              enm_disconnect_type(nm, NM_DEVICE_TYPE_BLUETOOTH);
              enm_disconnect_type(nm, NM_DEVICE_TYPE_WIFI);
-             INF("Connect ethernet device %s",
-                 id->dev->interface ?: id->dev->path);
+             L("NM: Connect ethernet device %s",
+               id->dev->interface ?: id->dev->path);
              if (selected) enm_ethernet_connect(nm, id->dev);
           }
         return;
@@ -1096,7 +1096,7 @@ _enm_item_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    /* If this AP's SSID is currently active, disconnect */
    if (nm->active_ap_path && _enm_ssid_is_active(nm, id->ap->ssid))
      {
-        INF("Disconnect from %s", id->ap->ssid ?: id->ap_path);
+        L("NM: Disconnect from %s", id->ap->ssid ?: id->ap_path);
         if (!selected) enm_ap_disconnect(nm);
         return;
      }
@@ -1111,9 +1111,9 @@ _enm_item_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                {
                   enm_disconnect_type(nm, NM_DEVICE_TYPE_ETHERNET);
                   enm_disconnect_type(nm, NM_DEVICE_TYPE_BLUETOOTH);
-                  INF("Connect to %s on device %s",
-                      id->ap->ssid ?: id->ap_path,
-                      dev->interface ?: dev->path);
+                  L("NM: Connect to %s on device %s",
+                    id->ap->ssid ?: id->ap_path,
+                    dev->interface ?: dev->path);
                   if (selected) enm_ap_connect(nm, dev, id->ap);
                   return;
                }
@@ -1206,7 +1206,7 @@ _enm_forget_click_cb(void *data, Evas_Object *obj EINA_UNUSED,
     * fd — including its connection_path stringshare — before we use it. */
    const char *conn_path = eina_stringshare_ref(fd->connection_path);
 
-   INF("Forget connection: %s (ssid=%s)", conn_path, fd->ssid ?: "(null)");
+   L("NM: Forget connection: %s (ssid=%s)", conn_path, fd->ssid ?: "(null)");
 
    /* Optimistic update: remove SSID from local hash immediately so the
     * forget icon disappears at once without waiting for D-Bus round trips.
@@ -1248,19 +1248,19 @@ _enm_ap_end_new(struct NM_Manager *nm, struct NM_Access_Point *ap,
    /* Only show forget for saved (known) networks */
    if (!nm->saved_connections || !ap->ssid)
      {
-        DBG("forget: no hash (%p) or no ssid (%p)", nm->saved_connections, ap->ssid);
+        L("NM: forget: no hash (%p) or no ssid (%p)", nm->saved_connections, ap->ssid);
         return NULL;
      }
 
    conn_path = eina_hash_find(nm->saved_connections, ap->ssid);
    if (!conn_path)
      {
-        DBG("forget: ssid '%s' not in saved_connections hash (size=%d)",
-            ap->ssid, nm->saved_connections ? eina_hash_population(nm->saved_connections) : -1);
+        L("NM: forget: ssid '%s' not in saved_connections hash (size=%d)",
+          ap->ssid, nm->saved_connections ? eina_hash_population(nm->saved_connections) : -1);
         return NULL;
      }
 
-   INF("forget: creating button for ssid '%s' -> %s", ap->ssid, conn_path);
+   L("NM: forget: creating button for ssid '%s' -> %s", ap->ssid, conn_path);
 
    fd = malloc(sizeof(*fd));
    if (!fd) return NULL;
@@ -2200,7 +2200,7 @@ _enm_gadget_setup(E_NM_Instance *inst)
    E_NM_Module_Context *ctxt = inst->ctxt;
    Evas_Object *o = inst->ui.gadget;
 
-   DBG("has_manager=%d", ctxt->nm != NULL);
+   L("NM: has_manager=%d", ctxt->nm != NULL);
 
    if (!ctxt->nm)
      {
@@ -2262,9 +2262,9 @@ _enm_mod_manager_update_inst(E_NM_Module_Context *ctxt EINA_UNUSED,
    else
      strength = active_ap ? active_ap->strength : 0;
 
-   DBG("gadget_update: state=%d type=%s ap=%s strength=%d active_ap=%p",
-       state, typestr, nm ? (nm->active_ap_path ?: "(null)") : "no-nm",
-       strength, active_ap);
+   L("NM: gadget_update: state=%d type=%s ap=%s strength=%d active_ap=%p",
+     state, typestr, nm ? (nm->active_ap_path ?: "(null)") : "no-nm",
+     strength, active_ap);
    theme_state = _enm_state_to_connman(state);
 
    msg = malloc(sizeof(*msg) + sizeof(int));
@@ -2422,7 +2422,7 @@ _enm_connected(Eina_Bool online)
 {
    E_NM_Module_Context *ctxt = networkmanager_mod->data;
 
-   INF("Network connected (online=%d)", online);
+   L("NM: Network connected (online=%d)", online);
    if (online) enm_online_check_stop(ctxt->online_check);
    else enm_online_check_start(ctxt->online_check);
 }
@@ -2432,7 +2432,7 @@ _enm_disconnected(void)
 {
    E_NM_Module_Context *ctxt = networkmanager_mod->data;
 
-   INF("Network disconnected");
+   L("NM: Network disconnected");
    enm_online_check_stop(ctxt->online_check);
 }
 
@@ -2516,7 +2516,7 @@ _enm_mod_manager_inout(struct NM_Manager *nm)
    const Eina_List *l;
    E_NM_Instance *inst;
 
-   DBG("Manager %s", nm ? "in" : "out");
+   L("NM: Manager %s", nm ? "in" : "out");
    ctxt->nm = nm;
 
    EINA_LIST_FOREACH(ctxt->instances, l, inst)
@@ -2558,8 +2558,8 @@ _enm_vpn_emit_shield(E_NM_Module_Context *ctxt)
    unsigned int n = enm_vpn_active_count(ctxt->nm);
    const char *sig = n > 0 ? "e,vpn,active" : "e,vpn,inactive";
 
-   DBG("VPN shield emit: active_count=%u -> signal='%s' (%u instances)",
-       n, sig, (unsigned int)eina_list_count(ctxt->instances));
+   L("NM: VPN shield emit: active_count=%u -> signal='%s' (%u instances)",
+     n, sig, (unsigned int)eina_list_count(ctxt->instances));
 
    E_NM_Instance *inst; Eina_List *l;
    EINA_LIST_FOREACH(ctxt->instances, l, inst)

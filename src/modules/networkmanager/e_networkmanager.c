@@ -222,13 +222,13 @@ _ap_get_props_cb(void *data, const Eldbus_Message *msg,
    if (eldbus_message_error_get(msg, &name, &text))
      {
         if (strcmp(name, ELDBUS_ERROR_PENDING_CANCELED) != 0)
-          WRN("Could not get AP properties. %s: %s", name, text);
+          L("NM: Could not get AP properties. %s: %s", name, text);
         return;
      }
 
    if (!eldbus_message_arguments_get(msg, "a{sv}", &array))
      {
-        WRN("AP GetAll: error getting arguments");
+        L("NM: AP GetAll: error getting arguments");
         return;
      }
 
@@ -284,8 +284,8 @@ _ap_get_props_cb(void *data, const Eldbus_Message *msg,
           }
      }
 
-   DBG("AP %s ssid=%s strength=%d", ap->path, ap->ssid ?: "(hidden)",
-       ap->strength);
+   L("NM: AP %s ssid=%s strength=%d", ap->path, ap->ssid ?: "(hidden)",
+     ap->strength);
 
    /* Refresh gadget now that AP data (strength, security, frequency) is
     * available — avoids leaving stale strength=0/no-lock state if this
@@ -589,13 +589,13 @@ _device_get_aps_cb(void *data, const Eldbus_Message *msg,
 
    if (eldbus_message_error_get(msg, &name, &text))
      {
-        WRN("GetAccessPoints failed: %s: %s", name, text);
+        L("NM: GetAccessPoints failed: %s: %s", name, text);
         return;
      }
 
    if (!eldbus_message_arguments_get(msg, "ao", &array))
      {
-        WRN("GetAccessPoints: cannot parse reply");
+        L("NM: GetAccessPoints: cannot parse reply");
         return;
      }
 
@@ -605,7 +605,7 @@ _device_get_aps_cb(void *data, const Eldbus_Message *msg,
         if (!ap) continue;
         dev->access_points = eina_inlist_append(dev->access_points,
                                                 EINA_INLIST_GET(ap));
-        DBG("Added AP %s to device %s", ap_path, dev->path);
+        L("NM: Added AP %s to device %s", ap_path, dev->path);
      }
 
    /* Guard: nm_manager may have been freed if NM exited while GetAccessPoints
@@ -631,7 +631,7 @@ _device_ap_added(void *data, const Eldbus_Message *msg)
    if (!eldbus_message_arguments_get(msg, "o", &ap_path))
      return;
 
-   DBG("AP added: %s on device %s", ap_path, dev->path);
+   L("NM: AP added: %s on device %s", ap_path, dev->path);
 
    /* Check not already tracked */
    struct NM_Access_Point *ap;
@@ -662,7 +662,7 @@ _device_ap_removed(void *data, const Eldbus_Message *msg)
    if (!eldbus_message_arguments_get(msg, "o", &ap_path))
      return;
 
-   DBG("AP removed: %s on device %s", ap_path, dev->path);
+   L("NM: AP removed: %s on device %s", ap_path, dev->path);
 
    shared = eina_stringshare_add(ap_path);
    EINA_INLIST_FOREACH(dev->access_points, ap)
@@ -700,7 +700,7 @@ _device_prop_changed(void *data, const Eldbus_Message *msg)
              if (eldbus_message_iter_arguments_get(var, "u", &state))
                {
                   dev->state = state;
-                  DBG("Device %s state -> %u", dev->path, state);
+                  L("NM: Device %s state -> %u", dev->path, state);
                   _notify_manager_update(nm_manager);
                   try_adopt = EINA_TRUE;
                }
@@ -717,7 +717,7 @@ _device_prop_changed(void *data, const Eldbus_Message *msg)
                     {
                        free(dev->active_conn_path);
                        dev->active_conn_path = strdup(aconn_path);
-                       DBG("Device %s ActiveConnection -> %s", dev->path, aconn_path);
+                       L("NM: Device %s ActiveConnection -> %s", dev->path, aconn_path);
                     }
                   else
                     {
@@ -775,8 +775,8 @@ _try_ethernet_adopt(struct NM_Device *dev)
    /* First active device wins — skip if another already adopted. */
    if (nm_manager->active_connection_path) return;
 
-   DBG("Ethernet device %s adopting connection %s (state=%u)",
-       dev->path, dev->active_conn_path, dev->state);
+   L("NM: Ethernet device %s adopting connection %s (state=%u)",
+     dev->path, dev->active_conn_path, dev->state);
 
    nm_manager->probe_generation++;
    _manager_active_conn_watch_free(nm_manager);
@@ -815,8 +815,8 @@ _try_wifi_adopt(struct NM_Device *dev)
    /* First active device wins — skip if another already adopted. */
    if (nm_manager->active_connection_path) return;
 
-   DBG("WiFi device %s adopting conn=%s ap=%s (state=%u)",
-       dev->path, dev->active_conn_path, dev->active_ap_path, dev->state);
+   L("NM: WiFi device %s adopting conn=%s ap=%s (state=%u)",
+     dev->path, dev->active_conn_path, dev->active_ap_path, dev->state);
 
    nm_manager->probe_generation++;
    _manager_active_conn_watch_free(nm_manager);
@@ -854,8 +854,8 @@ _try_bluetooth_adopt(struct NM_Device *dev)
 
    if (nm_manager->active_connection_path) return;
 
-   DBG("Bluetooth device %s adopting connection %s (state=%u)",
-       dev->path, dev->active_conn_path, dev->state);
+   L("NM: Bluetooth device %s adopting connection %s (state=%u)",
+     dev->path, dev->active_conn_path, dev->state);
 
    nm_manager->probe_generation++;
    _manager_active_conn_watch_free(nm_manager);
@@ -913,7 +913,7 @@ _device_wifi_prop_changed(void *data, const Eldbus_Message *msg)
                   if (path && strcmp(path, "/") != 0)
                     {
                        dev->active_ap_path = strdup(path);
-                       DBG("Device %s ActiveAccessPoint -> %s", dev->path, path);
+                       L("NM: Device %s ActiveAccessPoint -> %s", dev->path, path);
                     }
                   else
                     dev->active_ap_path = NULL;
@@ -958,13 +958,13 @@ _device_get_props_cb(void *data, const Eldbus_Message *msg,
 
    if (eldbus_message_error_get(msg, &name, &text))
      {
-        WRN("Device GetAll failed: %s: %s", name, text);
+        L("NM: Device GetAll failed: %s: %s", name, text);
         return;
      }
 
    if (!eldbus_message_arguments_get(msg, "a{sv}", &array))
      {
-        WRN("Device GetAll: cannot parse reply");
+        L("NM: Device GetAll: cannot parse reply");
         return;
      }
 
@@ -1003,7 +1003,7 @@ _device_get_props_cb(void *data, const Eldbus_Message *msg,
              if (eldbus_message_iter_arguments_get(var, "u", &dtype))
                {
                   dev->type = (enum NM_Device_Type)dtype;
-                  DBG("Device %s type=%u", dev->path, dtype);
+                  L("NM: Device %s type=%u", dev->path, dtype);
                }
           }
         else if (!strcmp(key, "State"))
@@ -1103,13 +1103,13 @@ _device_wifi_props_cb(void *data, const Eldbus_Message *msg,
 
    if (eldbus_message_error_get(msg, &name, &text))
      {
-        WRN("Device Wireless GetAll failed: %s: %s", name, text);
+        L("NM: Device Wireless GetAll failed: %s: %s", name, text);
         return;
      }
 
    if (!eldbus_message_arguments_get(msg, "a{sv}", &array))
      {
-        WRN("Device Wireless GetAll: cannot parse reply");
+        L("NM: Device Wireless GetAll: cannot parse reply");
         return;
      }
 
@@ -1130,8 +1130,8 @@ _device_wifi_props_cb(void *data, const Eldbus_Message *msg,
           }
      }
 
-   DBG("Device %s ActiveAccessPoint=%s state=%u",
-       dev->path, ap_path ?: "(none)", dev->state);
+   L("NM: Device %s ActiveAccessPoint=%s state=%u",
+     dev->path, ap_path ?: "(none)", dev->state);
 
    /* Persist the active AP path on the device so that _try_wifi_adopt() can
     * be called from multiple entry points (here, _device_wifi_prop_changed)
@@ -1298,7 +1298,7 @@ _ip4_parse_address_data(struct NM_Manager *nm, Eldbus_Message_Iter *var)
                {
                   free(nm->ip_address);
                   nm->ip_address = strdup(addr);
-                  DBG("IP address: %s", nm->ip_address);
+                  L("NM: IP address: %s", nm->ip_address);
                }
           }
      }
@@ -1342,7 +1342,7 @@ _ip4config_get_props_cb(void *data, const Eldbus_Message *msg,
 
    if (eldbus_message_error_get(msg, &name, &text))
      {
-        WRN("IP4Config GetAll failed: %s: %s", name, text);
+        L("NM: IP4Config GetAll failed: %s: %s", name, text);
         return;
      }
 
@@ -1461,7 +1461,7 @@ _active_conn_prop_changed(void *data, const Eldbus_Message *msg)
              const char *ap_path;
              if (eldbus_message_iter_arguments_get(var, "o", &ap_path))
                {
-                  DBG("ActiveConn SpecificObject changed: %s", ap_path);
+                  L("NM: ActiveConn SpecificObject changed: %s", ap_path);
                   eina_stringshare_replace(&nm->active_ap_path,
                                            (ap_path && strcmp(ap_path, "/"))
                                            ? ap_path : NULL);
@@ -1519,22 +1519,22 @@ _active_conn_probe_cb(void *data, const Eldbus_Message *msg,
    /* Discard stale probes that were superseded by a newer batch */
    if (probe->generation != nm->probe_generation)
      {
-        DBG("Discarding stale probe (gen %u vs current %u) path=%s",
-            probe->generation, nm->probe_generation, probe->path ?: "?");
+        L("NM: Discarding stale probe (gen %u vs current %u) path=%s",
+          probe->generation, nm->probe_generation, probe->path ?: "?");
         _active_conn_probe_free(probe);
         return;
      }
 
    if (eldbus_message_error_get(msg, &name, &text))
      {
-        WRN("ActiveConnection GetAll failed: %s: %s", name, text);
+        L("NM: ActiveConnection GetAll failed: %s: %s", name, text);
         _active_conn_probe_free(probe);
         return;
      }
 
    if (!eldbus_message_arguments_get(msg, "a{sv}", &array))
      {
-        WRN("ActiveConnection GetAll: cannot parse a{sv}");
+        L("NM: ActiveConnection GetAll: cannot parse a{sv}");
         _active_conn_probe_free(probe);
         return;
      }
@@ -1566,14 +1566,14 @@ _active_conn_probe_cb(void *data, const Eldbus_Message *msg,
        conn_type != NM_DEVICE_TYPE_ETHERNET &&
        conn_type != NM_DEVICE_TYPE_BLUETOOTH)
      {
-        DBG("ActiveConn type=%s (%d) — skipping", type_str ?: "?", conn_type);
+        L("NM: ActiveConn type=%s (%d) — skipping", type_str ?: "?", conn_type);
         _active_conn_probe_free(probe);
         return;
      }
 
    /* This is a useful connection — promote probe to persistent watcher */
-   DBG("ActiveConn type=%s (%d) — adopting path=%s",
-       type_str ?: "?", conn_type, probe->path);
+   L("NM: ActiveConn type=%s (%d) — adopting path=%s",
+     type_str ?: "?", conn_type, probe->path);
 
    /* Tear down any previous persistent watcher */
    _manager_active_conn_watch_free(nm);
@@ -1613,7 +1613,7 @@ _manager_probe_active_conn(struct NM_Manager *nm,
 {
    struct _Active_Conn_Probe *probe;
 
-   DBG("_manager_probe_active_conn path=%s", active_conn_path ?: "(null)");
+   L("NM: _manager_probe_active_conn path=%s", active_conn_path ?: "(null)");
    if (!active_conn_path || !strcmp(active_conn_path, "/")) return;
 
    /* Skip if already watching this exact connection */
@@ -1678,24 +1678,24 @@ _enm_vpn_resolve_cb(void *data, const Eldbus_Message *msg,
 
    if (eldbus_message_error_get(msg, &err_name, &err_msg))
      {
-        DBG("VPN resolve Connection: %s %s", err_name ?: "", err_msg ?: "");
+        L("NM: VPN resolve Connection: %s %s", err_name ?: "", err_msg ?: "");
         goto out;
      }
    if (!eldbus_message_arguments_get(msg, "v", &var)) goto out;
    if (!eldbus_message_iter_arguments_get(var, "o", &settings_path)) goto out;
 
-   DBG("VPN resolve: active_path=%s -> settings_path=%s",
-       ctx->active_path ?: "?", settings_path ?: "?");
+   L("NM: VPN resolve: active_path=%s -> settings_path=%s",
+     ctx->active_path ?: "?", settings_path ?: "?");
 
    vc = enm_vpn_find_by_path(ctx->nm, settings_path);
    if (vc)
      {
-        DBG("VPN resolve: binding vc='%s' to active=%s",
-            vc->name ?: "?", ctx->active_path);
+        L("NM: VPN resolve: binding vc='%s' to active=%s",
+          vc->name ?: "?", ctx->active_path);
         enm_vpn_active_bind(vc, ctx->active_path);
      }
    else
-     DBG("VPN resolve: no vc matches settings path %s", settings_path);
+     L("NM: VPN resolve: no vc matches settings path %s", settings_path);
 
 out:
    eldbus_proxy_unref(ctx->proxy);
@@ -1807,8 +1807,8 @@ _manager_prop_changed(void *data, const Eldbus_Message *msg)
              if (eldbus_message_iter_arguments_get(var, "u", &state))
                {
                   nm->state = (enum NM_State)state;
-                  DBG("NM state changed: %u (%s)", state,
-                      enm_state_to_str(nm->state));
+                  L("NM: NM state changed: %u (%s)", state,
+                    enm_state_to_str(nm->state));
                   _notify_manager_update(nm);
                }
           }
@@ -1903,13 +1903,13 @@ _manager_get_props_cb(void *data, const Eldbus_Message *msg,
 
    if (eldbus_message_error_get(msg, &name, &text))
      {
-        WRN("NM GetAll failed: %s: %s", name, text);
+        L("NM: NM GetAll failed: %s: %s", name, text);
         return;
      }
 
    if (!eldbus_message_arguments_get(msg, "a{sv}", &array))
      {
-        WRN("NM GetAll: cannot parse reply");
+        L("NM: NM GetAll: cannot parse reply");
         return;
      }
 
@@ -1940,7 +1940,7 @@ _manager_get_props_cb(void *data, const Eldbus_Message *msg,
 
              if (!eldbus_message_iter_arguments_get(var, "ao", &conn_array))
                {
-                  WRN("ActiveConnections: cannot parse ao from variant");
+                  L("NM: ActiveConnections: cannot parse ao from variant");
                   continue;
                }
 
@@ -1956,8 +1956,8 @@ _manager_get_props_cb(void *data, const Eldbus_Message *msg,
               * re-run reconcile once the final GetSettings reply arrives. */
              while (eldbus_message_iter_get_and_next(conn_array, 'o', &aconn_path))
                {
-                  DBG("ActiveConnections (startup): cached path=%s",
-                      aconn_path);
+                  L("NM: ActiveConnections (startup): cached path=%s",
+                    aconn_path);
                   nm->vpn_pending_active_paths =
                       eina_list_append(nm->vpn_pending_active_paths,
                                        (void *)eina_stringshare_add(aconn_path));
@@ -1965,8 +1965,8 @@ _manager_get_props_cb(void *data, const Eldbus_Message *msg,
           }
      }
 
-   DBG("manager_get_props done: state=%d active_ap=%s conn_type=%d",
-       nm->state, nm->active_ap_path ?: "(null)", nm->active_conn_type);
+   L("NM: manager_get_props done: state=%d active_ap=%s conn_type=%d",
+     nm->state, nm->active_ap_path ?: "(null)", nm->active_conn_type);
 
    /* Always update the UI now so that disconnected/VPN-only/unassociated
     * states are shown immediately.  Device callbacks will call
@@ -1994,13 +1994,13 @@ _manager_get_devices_cb(void *data, const Eldbus_Message *msg,
 
    if (eldbus_message_error_get(msg, &name, &text))
      {
-        WRN("GetDevices failed: %s: %s", name, text);
+        L("NM: GetDevices failed: %s: %s", name, text);
         return;
      }
 
    if (!eldbus_message_arguments_get(msg, "ao", &array))
      {
-        WRN("GetDevices: cannot parse reply");
+        L("NM: GetDevices: cannot parse reply");
         return;
      }
 
@@ -2009,7 +2009,7 @@ _manager_get_devices_cb(void *data, const Eldbus_Message *msg,
         struct NM_Device *dev = _device_new(dev_path);
         if (!dev) continue;
         nm->devices = eina_inlist_append(nm->devices, EINA_INLIST_GET(dev));
-        DBG("Added device %s", dev_path);
+        L("NM: Added device %s", dev_path);
      }
 }
 
@@ -2024,7 +2024,7 @@ _manager_device_added(void *data, const Eldbus_Message *msg)
    if (!eldbus_message_arguments_get(msg, "o", &dev_path))
      return;
 
-   DBG("Device added: %s", dev_path);
+   L("NM: Device added: %s", dev_path);
 
    shared = eina_stringshare_add(dev_path);
    EINA_INLIST_FOREACH(nm->devices, dev)
@@ -2051,7 +2051,7 @@ _manager_device_removed(void *data, const Eldbus_Message *msg)
    if (!eldbus_message_arguments_get(msg, "o", &dev_path))
      return;
 
-   DBG("Device removed: %s", dev_path);
+   L("NM: Device removed: %s", dev_path);
 
    shared = eina_stringshare_add(dev_path);
    EINA_INLIST_FOREACH(nm->devices, dev)
@@ -2097,8 +2097,8 @@ _saved_conn_settings_cb(void *data, const Eldbus_Message *msg,
     * this D-Bus call was in flight — avoids writing to freed/stale state. */
    if (ctx->generation != ctx->nm->saved_conn_generation)
      {
-        DBG("_saved_conn_settings_cb: stale generation %u vs %u, discarding",
-            ctx->generation, ctx->nm->saved_conn_generation);
+        L("NM: _saved_conn_settings_cb: stale generation %u vs %u, discarding",
+          ctx->generation, ctx->nm->saved_conn_generation);
         goto done;
      }
 
@@ -2106,13 +2106,13 @@ _saved_conn_settings_cb(void *data, const Eldbus_Message *msg,
       const char *err_name = NULL, *err_msg = NULL;
       if (eldbus_message_error_get(msg, &err_name, &err_msg))
         {
-           ERR("GetSettings failed: %s %s", err_name ?: "", err_msg ?: "");
+           L("NM: GetSettings failed: %s %s", err_name ?: "", err_msg ?: "");
            goto done;
         }
    }
    if (!eldbus_message_arguments_get(msg, "a{sa{sv}}", &settings))
      {
-        ERR("GetSettings: failed to parse reply arguments");
+        L("NM: GetSettings: failed to parse reply arguments");
         goto done;
      }
 
@@ -2181,14 +2181,14 @@ _saved_conn_settings_cb(void *data, const Eldbus_Message *msg,
         eina_hash_del_by_key(ctx->nm->saved_connections, ssid_str);
         eina_hash_add(ctx->nm->saved_connections, ssid_str,
                       eina_stringshare_add(ctx->path));
-        INF("saved_conn: added '%s' -> %s", ssid_str, ctx->path);
+        L("NM: saved_conn: added '%s' -> %s", ssid_str, ctx->path);
      }
    else if (conn_type && !strcmp(conn_type, "bluetooth"))
      {
         _nm_bluetooth_connection_add(ctx->nm, ctx->path,
                                      conn_name ?: _("Bluetooth"),
                                      bt_addr);
-        INF("saved_bt_conn: added '%s' (%s) -> %s",
+        L("NM: saved_bt_conn: added '%s' (%s) -> %s",
             conn_name ?: _("Bluetooth"), bt_addr ?: "?", ctx->path);
      }
    else if (conn_type && !strcmp(conn_type, "802-3-ethernet"))
@@ -2196,7 +2196,7 @@ _saved_conn_settings_cb(void *data, const Eldbus_Message *msg,
         _nm_wired_connection_add(ctx->nm, ctx->path,
                                  conn_name ?: _("Wired"),
                                  conn_iface, eth_addr);
-        INF("saved_eth_conn: added '%s' (%s/%s) -> %s",
+        L("NM: saved_eth_conn: added '%s' (%s/%s) -> %s",
             conn_name ?: _("Wired"), conn_iface ?: "?",
             eth_addr ?: "?", ctx->path);
      }
@@ -2241,8 +2241,8 @@ _saved_conn_list_cb(void *data, const Eldbus_Message *msg,
    /* Bail out if a newer batch was started or manager was freed. */
    if (generation != nm->saved_conn_generation)
      {
-        DBG("_saved_conn_list_cb: stale generation %u vs %u, discarding",
-            generation, nm->saved_conn_generation);
+        L("NM: _saved_conn_list_cb: stale generation %u vs %u, discarding",
+          generation, nm->saved_conn_generation);
         return;
      }
 
@@ -2250,13 +2250,13 @@ _saved_conn_list_cb(void *data, const Eldbus_Message *msg,
       const char *err_name = NULL, *err_msg = NULL;
       if (eldbus_message_error_get(msg, &err_name, &err_msg))
         {
-           ERR("ListConnections failed: %s %s", err_name ?: "", err_msg ?: "");
+           L("NM: ListConnections failed: %s %s", err_name ?: "", err_msg ?: "");
            return;
         }
    }
    if (!eldbus_message_arguments_get(msg, "ao", &conn_array))
      {
-        ERR("ListConnections: failed to parse reply");
+        L("NM: ListConnections: failed to parse reply");
         return;
      }
 
@@ -2336,8 +2336,8 @@ _connection_delete_cb(void *data, const Eldbus_Message *msg,
 
    if (eldbus_message_error_get(msg, &err_name, &err_msg))
      {
-        ERR("Failed to delete connection %s: %s %s",
-            ctx->path, err_name, err_msg);
+        L("NM: Failed to delete connection %s: %s %s",
+          ctx->path, err_name, err_msg);
         /* Recover: the optimistic UI removal already hid the forget button.
          * Refresh saved_connections so the button reappears if the delete
          * failed (e.g. stale connection path). */
@@ -2345,8 +2345,8 @@ _connection_delete_cb(void *data, const Eldbus_Message *msg,
         goto done;
      }
 
-   INF("Connection %s deleted successfully — awaiting ConnectionRemoved signal",
-       ctx->path);
+   L("NM: Connection %s deleted successfully — awaiting ConnectionRemoved signal",
+     ctx->path);
    /* Do NOT call enm_saved_connections_get here: NM may not have removed the
     * connection from its internal list yet, so ListConnections would still
     * return the deleted path and the SSID would be re-added to the hash.
@@ -2400,13 +2400,13 @@ _settings_conn_removed_cb(void *data, const Eldbus_Message *msg)
 
    if (eldbus_message_arguments_get(msg, "o", &path) && path)
      {
-        INF("ConnectionRemoved signal for %s", path);
+        L("NM: ConnectionRemoved signal for %s", path);
         enm_vpn_remove_by_path(nm, path);
      }
    else
      {
         /* No path in the signal — fall back to a full re-enumerate. */
-        WRN("ConnectionRemoved without object path; full re-enumerate");
+        L("NM: ConnectionRemoved without object path; full re-enumerate");
         enm_vpn_enumerate(nm);
      }
 }
@@ -2425,12 +2425,12 @@ _settings_conn_added_cb(void *data, const Eldbus_Message *msg)
 
    if (eldbus_message_arguments_get(msg, "o", &path) && path)
      {
-        INF("NewConnection signal for %s", path);
+        L("NM: NewConnection signal for %s", path);
         enm_vpn_settings_fetch_one(nm, path);
      }
    else
      {
-        WRN("NewConnection without object path; full re-enumerate");
+        L("NM: NewConnection without object path; full re-enumerate");
         enm_vpn_enumerate(nm);
      }
 }
@@ -2646,9 +2646,9 @@ _activate_cb(void *data, const Eldbus_Message *msg,
    const char *name, *text;
 
    if (eldbus_message_error_get(msg, &name, &text))
-     ERR("ActivateConnection failed: %s: %s", name, text);
+     L("NM: ActivateConnection failed: %s: %s", name, text);
    else
-     INF("ActivateConnection succeeded");
+     L("NM: ActivateConnection succeeded");
 
    free(cd);
 }
@@ -2661,9 +2661,9 @@ _add_activate_cb(void *data, const Eldbus_Message *msg,
    const char *name, *text;
 
    if (eldbus_message_error_get(msg, &name, &text))
-     ERR("AddAndActivateConnection failed: %s: %s", name, text);
+     L("NM: AddAndActivateConnection failed: %s: %s", name, text);
    else
-     INF("AddAndActivateConnection succeeded");
+     L("NM: AddAndActivateConnection succeeded");
 
    free(cd);
 }
@@ -2692,8 +2692,8 @@ enm_ap_connect(struct NM_Manager *nm, struct NM_Device *dev,
    if (conn_path)
      {
         /* Known saved profile — activate it directly */
-        INF("ActivateConnection: saved profile %s for ssid=%s",
-            conn_path, ap->ssid);
+        L("NM: ActivateConnection: saved profile %s for ssid=%s",
+          conn_path, ap->ssid);
         eldbus_proxy_call(nm->proxy, "ActivateConnection",
                           _activate_cb, cd, NM_CONNECTION_TIMEOUT,
                           "ooo", conn_path, dev->path, ap->path);
@@ -2705,8 +2705,8 @@ enm_ap_connect(struct NM_Manager *nm, struct NM_Device *dev,
         Eldbus_Message *msg_call;
         Eldbus_Message_Iter *iter, *empty_dict;
 
-        INF("AddAndActivateConnection: no saved profile for ssid=%s",
-            ap->ssid ?: "(null)");
+        L("NM: AddAndActivateConnection: no saved profile for ssid=%s",
+          ap->ssid ?: "(null)");
 
         msg_call = eldbus_proxy_method_call_new(nm->proxy,
                                                 "AddAndActivateConnection");
@@ -2728,9 +2728,9 @@ _deactivate_cb(void *data EINA_UNUSED, const Eldbus_Message *msg,
    const char *name, *text;
 
    if (eldbus_message_error_get(msg, &name, &text))
-     ERR("DeactivateConnection failed: %s: %s", name, text);
+     L("NM: DeactivateConnection failed: %s: %s", name, text);
    else
-     INF("DeactivateConnection succeeded");
+     L("NM: DeactivateConnection succeeded");
 }
 
 static void
@@ -2741,7 +2741,7 @@ _enm_connection_deactivate(struct NM_Manager *nm, const char *connection_path)
 
    if (!strcmp(connection_path, "/"))
      {
-        WRN("Refusing to disconnect null connection path");
+        L("NM: Refusing to disconnect null connection path");
         return;
      }
 
@@ -2758,7 +2758,7 @@ enm_ap_disconnect(struct NM_Manager *nm)
    if (!nm->active_connection_path ||
        !strcmp(nm->active_connection_path, "/"))
      {
-        WRN("No active connection to disconnect");
+        L("NM: No active connection to disconnect");
         return;
      }
 
@@ -2779,10 +2779,10 @@ enm_disconnect_type(struct NM_Manager *nm, enum NM_Device_Type type)
         if (dev->state < 100) continue;
         if (!dev->active_conn_path) continue;
 
-        INF("Disconnect %s connection on device %s (%s)",
-            enm_device_type_to_str(type),
-            dev->interface ?: dev->path,
-            dev->active_conn_path);
+        L("NM: Disconnect %s connection on device %s (%s)",
+          enm_device_type_to_str(type),
+          dev->interface ?: dev->path,
+          dev->active_conn_path);
         _enm_connection_deactivate(nm, dev->active_conn_path);
         disconnected = EINA_TRUE;
      }
@@ -2793,9 +2793,9 @@ enm_disconnect_type(struct NM_Manager *nm, enum NM_Device_Type type)
        nm->active_connection_path &&
        strcmp(nm->active_connection_path, "/"))
      {
-        INF("Disconnect primary %s connection %s",
-            enm_device_type_to_str(type),
-            nm->active_connection_path);
+        L("NM: Disconnect primary %s connection %s",
+          enm_device_type_to_str(type),
+          nm->active_connection_path);
         _enm_connection_deactivate(nm, nm->active_connection_path);
      }
 }
@@ -2816,8 +2816,8 @@ enm_bluetooth_connect(struct NM_Manager *nm, struct NM_Device *dev,
    cd->nm = nm;
    cd->dev = dev;
 
-   INF("ActivateConnection: bluetooth profile %s on device %s",
-       connection_path, dev->path);
+   L("NM: ActivateConnection: bluetooth profile %s on device %s",
+     connection_path, dev->path);
    eldbus_proxy_call(nm->proxy, "ActivateConnection",
                      _activate_cb, cd, NM_CONNECTION_TIMEOUT,
                      "ooo", connection_path, dev->path, "/");
@@ -2841,8 +2841,8 @@ enm_ethernet_connect(struct NM_Manager *nm, struct NM_Device *dev)
 
    if (wc && wc->path)
      {
-        INF("ActivateConnection: ethernet profile %s on device %s",
-            wc->path, dev->path);
+        L("NM: ActivateConnection: ethernet profile %s on device %s",
+          wc->path, dev->path);
         eldbus_proxy_call(nm->proxy, "ActivateConnection",
                           _activate_cb, cd, NM_CONNECTION_TIMEOUT,
                           "ooo", wc->path, dev->path, "/");
@@ -2853,8 +2853,8 @@ enm_ethernet_connect(struct NM_Manager *nm, struct NM_Device *dev)
       Eldbus_Message *msg_call;
       Eldbus_Message_Iter *iter, *empty_dict;
 
-      INF("AddAndActivateConnection: no saved ethernet profile for device %s",
-          dev->path);
+      L("NM: AddAndActivateConnection: no saved ethernet profile for device %s",
+        dev->path);
 
       msg_call = eldbus_proxy_method_call_new(nm->proxy,
                                               "AddAndActivateConnection");
@@ -3573,12 +3573,12 @@ _agent_get_secrets(const Eldbus_Service_Interface *iface,
                                      &conn_props, &conn_path,
                                      &setting_name, &hints, &flags))
      {
-        WRN("GetSecrets: cannot parse arguments");
+        L("NM: GetSecrets: cannot parse arguments");
         return eldbus_message_method_return_new(msg);
      }
 
-   DBG("GetSecrets for %s setting=%s flags=%u",
-       conn_path, setting_name, flags);
+   L("NM: GetSecrets for %s setting=%s flags=%u",
+     conn_path, setting_name, flags);
 
    /* Only extract the SSID for wifi requests — _agent_ssid_extract walks
     * conn_props with a forward-only iterator that we cannot reset, and the
@@ -3615,7 +3615,7 @@ _agent_get_secrets(const Eldbus_Service_Interface *iface,
             (!is_challenge &&
              !_agent_vpn_fields_add_defaults(&info, &fields)))
           {
-             WRN("GetSecrets: failed to build VPN secret request");
+             L("NM: GetSecrets: failed to build VPN secret request");
              e_nm_agent_reply_cancel(req);
              _agent_vpn_field_list_clear(&fields);
              _agent_vpn_conn_info_clear(&info);
@@ -3624,7 +3624,7 @@ _agent_get_secrets(const Eldbus_Service_Interface *iface,
 
         if (fields.len == 0)
           {
-             WRN("GetSecrets: no VPN secrets requested by hints or flags");
+             L("NM: GetSecrets: no VPN secrets requested by hints or flags");
              e_nm_agent_reply_cancel(req);
              _agent_vpn_field_list_clear(&fields);
              _agent_vpn_conn_info_clear(&info);
@@ -3641,7 +3641,7 @@ _agent_get_secrets(const Eldbus_Service_Interface *iface,
           }
         else
           {
-             WRN("No VPN SecretAgent UI callback; cancelling");
+             L("NM: No VPN SecretAgent UI callback; cancelling");
              e_nm_agent_reply_cancel(req);
           }
 
@@ -3653,11 +3653,14 @@ _agent_get_secrets(const Eldbus_Service_Interface *iface,
         if (_agent_cbs.request)
           _agent_cbs.request(_agent_cb_data, req, ssid[0] ? ssid : NULL);
         else
-          { WRN("No SecretAgent UI cb"); e_nm_agent_reply_cancel(req); }
+          {
+             L("NM: No SecretAgent UI cb");
+             e_nm_agent_reply_cancel(req);
+          }
      }
    else
      {
-        WRN("Unhandled secret setting %s; cancelling", setting_name);
+        L("NM: Unhandled secret setting %s; cancelling", setting_name);
         e_nm_agent_reply_cancel(req);
      }
 
@@ -3673,12 +3676,12 @@ _agent_cancel_get_secrets(const Eldbus_Service_Interface *iface,
    Eina_List *l, *ln;
    E_NM_Agent_Request *req;
 
-   DBG("CancelGetSecrets");
+   L("NM: CancelGetSecrets");
 
    if (!eldbus_message_arguments_get(msg, "os",
                                      &cancel_path, &cancel_setting))
      {
-        WRN("CancelGetSecrets: cannot parse arguments");
+        L("NM: CancelGetSecrets: cannot parse arguments");
         return eldbus_message_method_return_new(msg);
      }
 
@@ -3759,9 +3762,9 @@ _agent_register_cb(void *data EINA_UNUSED, const Eldbus_Message *msg,
    const char *name, *text;
 
    if (eldbus_message_error_get(msg, &name, &text))
-     WRN("SecretAgent Register failed: %s: %s", name, text);
+     L("NM: SecretAgent Register failed: %s: %s", name, text);
    else
-     INF("SecretAgent registered with NetworkManager");
+     L("NM: SecretAgent registered with NetworkManager");
 }
 
 static E_NM_Agent *
@@ -3779,7 +3782,7 @@ _e_nm_agent_new(Eldbus_Connection *eldbus_conn)
                                               &_agent_desc);
    if (!iface)
      {
-        ERR("Failed to register SecretAgent D-Bus interface");
+        L("NM: Failed to register SecretAgent D-Bus interface");
         free(a);
         return NULL;
      }
@@ -3875,7 +3878,7 @@ e_nm_system_shutdown(void)
 {
    if (init_count == 0)
      {
-        ERR("networkmanager system already shut down.");
+        L("NM: networkmanager system already shut down.");
         return 0;
      }
 

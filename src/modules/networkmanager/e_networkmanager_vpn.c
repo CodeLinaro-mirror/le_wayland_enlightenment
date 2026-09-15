@@ -72,13 +72,13 @@ _vpn_get_settings_cb(void *data, const Eldbus_Message *msg,
 
    if (eldbus_message_error_get(msg, &err_name, &err_msg))
      {
-        ERR("VPN GetSettings failed for %s: %s %s",
-            ctx->path, err_name ?: "", err_msg ?: "");
+        L("NM: VPN GetSettings failed for %s: %s %s",
+          ctx->path, err_name ?: "", err_msg ?: "");
         goto out;
      }
    if (!eldbus_message_arguments_get(msg, "a{sa{sv}}", &settings))
      {
-        ERR("VPN GetSettings: cannot parse reply for %s", ctx->path);
+        L("NM: VPN GetSettings: cannot parse reply for %s", ctx->path);
         goto out;
      }
 
@@ -165,9 +165,9 @@ _vpn_get_settings_cb(void *data, const Eldbus_Message *msg,
                eina_inlist_append(ctx->nm->vpn_connections, EINA_INLIST_GET(vc));
         }
 
-      DBG("Found VPN connection: %s (%s/%s)",
-          vc->name ?: "(unnamed)", vc->conn_type,
-          vc->service_type ?: "-");
+      L("NM: Found VPN connection: %s (%s/%s)",
+        vc->name ?: "(unnamed)", vc->conn_type,
+        vc->service_type ?: "-");
    }
 
 out:
@@ -195,9 +195,9 @@ out:
    if (ctx->nm->vpn_pending == 0)
      {
 
-        DBG("VPN enumeration terminal: vpn_connections=%u, cached active paths=%u",
-            eina_inlist_count(ctx->nm->vpn_connections),
-            (unsigned int)eina_list_count(ctx->nm->vpn_pending_active_paths));
+        L("NM: VPN enumeration terminal: vpn_connections=%u, cached active paths=%u",
+          eina_inlist_count(ctx->nm->vpn_connections),
+          (unsigned int)eina_list_count(ctx->nm->vpn_pending_active_paths));
 
         /* Re-run VPN active reconcile for paths that were seen at startup
          * (cached in vpn_pending_active_paths) before vpn_connections was
@@ -249,13 +249,13 @@ _vpn_list_cb(void *data, const Eldbus_Message *msg,
 
    if (eldbus_message_error_get(msg, &err_name, &err_msg))
      {
-        ERR("VPN ListConnections failed: %s %s",
-            err_name ?: "", err_msg ?: "");
+        L("NM: VPN ListConnections failed: %s %s",
+          err_name ?: "", err_msg ?: "");
         return;
      }
    if (!eldbus_message_arguments_get(msg, "ao", &array))
      {
-        ERR("VPN ListConnections: cannot parse reply");
+        L("NM: VPN ListConnections: cannot parse reply");
         return;
      }
 
@@ -404,8 +404,8 @@ enm_vpn_enumerate(struct NM_Manager *nm)
 
    if (!nm || !nm->settings_proxy) return;
 
-   DBG("enm_vpn_enumerate called (cache has %u active paths)",
-       (unsigned int)eina_list_count(nm->vpn_pending_active_paths));
+   L("NM: enm_vpn_enumerate called (cache has %u active paths)",
+     (unsigned int)eina_list_count(nm->vpn_pending_active_paths));
 
    /* Bump generation so any in-flight reply from the previous call is
     * recognised as stale in its callback. */
@@ -507,8 +507,8 @@ _vpn_delete_cb(void *data, const Eldbus_Message *msg,
    const char *err_name, *err_msg;
 
    if (eldbus_message_error_get(msg, &err_name, &err_msg))
-     ERR("VPN Delete failed for %s: %s %s",
-         ctx->path, err_name ?: "", err_msg ?: "");
+     L("NM: VPN Delete failed for %s: %s %s",
+       ctx->path, err_name ?: "", err_msg ?: "");
    /* On success NM emits ConnectionRemoved, which triggers enm_vpn_enumerate
     * via _settings_conn_removed_cb — no further action needed here. */
 
@@ -654,8 +654,8 @@ _autoconn_del_cb(void *data, int type EINA_UNUSED, void *event)
    stderr_text = ctx->stderr_buf ? eina_strbuf_string_get(ctx->stderr_buf) : "";
    if (!(ev->exited && (ev->exit_code == 0)))
      {
-        ERR("nmcli autoconnect modify failed for %s: %s",
-            ctx->uuid ?: "?", stderr_text ?: "");
+        L("NM: nmcli autoconnect modify failed for %s: %s",
+          ctx->uuid ?: "?", stderr_text ?: "");
      }
    else
      {
@@ -683,7 +683,7 @@ enm_vpn_set_autoconnect(struct NM_Manager *nm,
    nmcli = enm_import_nmcli_path();
    if (!nmcli)
      {
-        ERR("enm_vpn_set_autoconnect: nmcli not found on PATH");
+        L("NM: enm_vpn_set_autoconnect: nmcli not found on PATH");
         return;
      }
 
@@ -725,7 +725,7 @@ enm_vpn_set_autoconnect(struct NM_Manager *nm,
                                  ctx);
    if (!ctx->exe)
      {
-        ERR("enm_vpn_set_autoconnect: failed to spawn nmcli");
+        L("NM: enm_vpn_set_autoconnect: failed to spawn nmcli");
         nm->vpn_pending_autoconn =
             eina_list_remove(nm->vpn_pending_autoconn, ctx);
         _autoconn_ctx_free(ctx);
@@ -850,8 +850,8 @@ _vpn_ip4_get_all_cb(void *data, const Eldbus_Message *msg,
         if (err_name &&
             strcmp(err_name, ELDBUS_ERROR_PENDING_CANCELED) != 0 &&
             strcmp(err_name, "org.freedesktop.DBus.Error.NoReply") != 0)
-          WRN("Ip4Config GetAll failed for VPN '%s': %s %s",
-              vc->name ?: "?", err_name ?: "", err_msg ?: "");
+          L("NM: Ip4Config GetAll failed for VPN '%s': %s %s",
+            vc->name ?: "?", err_name ?: "", err_msg ?: "");
         return;
      }
    if (!eldbus_message_arguments_get(msg, "a{sv}", &props)) return;
@@ -893,8 +893,8 @@ _vpn_ip4_get_all_cb(void *data, const Eldbus_Message *msg,
                     {
                        free(vc->ip_address);
                        vc->ip_address = found_addr;
-                       DBG("VPN '%s' got IP address %s", vc->name ?: "?",
-                           vc->ip_address ?: "(none)");
+                       L("NM: VPN '%s' got IP address %s", vc->name ?: "?",
+                         vc->ip_address ?: "(none)");
                        break; /* first entry is sufficient */
                     }
                }
@@ -976,7 +976,7 @@ _vpn_bind_ip4(struct NM_VPN_Connection *vc, const char *ip4_path)
                          _vpn_ip4_get_all_cb, vc, -1,
                          "s", NM_IFACE_IP4CONFIG);
 
-   DBG("VPN '%s' bound Ip4Config path=%s", vc->name ?: "?", ip4_path);
+   L("NM: VPN '%s' bound Ip4Config path=%s", vc->name ?: "?", ip4_path);
 }
 
 static void
@@ -987,22 +987,22 @@ _vpn_active_props_get_cb(void *data, const Eldbus_Message *msg,
    Eldbus_Message_Iter *dict, *entry, *var;
    const char *err_name, *err_msg, *key;
 
-   DBG("VPN active props cb fired for vc='%s'", vc->name ?: "?");
+   L("NM: VPN active props cb fired for vc='%s'", vc->name ?: "?");
 
    vc->pending_get_props = NULL;
 
    if (eldbus_message_error_get(msg, &err_name, &err_msg))
      {
-        ERR("VPN active props cb: error '%s' / '%s' — bailing",
-            err_name ?: "(null)", err_msg ?: "(null)");
+        L("NM: VPN active props cb: error '%s' / '%s' — bailing",
+          err_name ?: "(null)", err_msg ?: "(null)");
         return;
      }
    if (!eldbus_message_arguments_get(msg, "a{sv}", &dict))
      {
-        ERR("VPN active props cb: failed to parse reply as a{sv} — bailing");
+        L("NM: VPN active props cb: failed to parse reply as a{sv} — bailing");
         return;
      }
-   DBG("VPN active props cb: reply parsed, iterating dict");
+   L("NM: VPN active props cb: reply parsed, iterating dict");
 
    {
       /* Two-pass: first collect Ip4Config path so we can bind after state. */
@@ -1047,8 +1047,8 @@ _vpn_active_props_get_cb(void *data, const Eldbus_Message *msg,
         }
    }
 
-   DBG("VPN '%s' state -> %u (prev %u)",
-       vc->name ?: "?", vc->vpn_state, vc->prev_state);
+   L("NM: VPN '%s' state -> %u (prev %u)",
+     vc->name ?: "?", vc->vpn_state, vc->prev_state);
 
    /* Initial GetAll is informational, not a transition.  Sync prev_state so
     * a pre-existing FAILED state at startup does not trigger a notification
@@ -1087,8 +1087,8 @@ _vpn_active_prop_changed(void *data, const Eldbus_Message *msg)
                       * first (e.g. Ip4Config). */
                      vc->prev_state = vc->vpn_state;
                      vc->vpn_state = (enum NM_VPN_State)s;
-                     DBG("VPN '%s' state -> %u (prev %u)",
-                         vc->name ?: "?", vc->vpn_state, vc->prev_state);
+                     L("NM: VPN '%s' state -> %u (prev %u)",
+                       vc->name ?: "?", vc->vpn_state, vc->prev_state);
                   }
              }
            else if (!strcmp(key, "State") &&
@@ -1099,8 +1099,8 @@ _vpn_active_prop_changed(void *data, const Eldbus_Message *msg)
                   {
                      vc->prev_state = vc->vpn_state;
                      vc->vpn_state = _wg_state_to_vpn_state(s);
-                     DBG("VPN '%s' state -> %u (prev %u)",
-                         vc->name ?: "?", vc->vpn_state, vc->prev_state);
+                     L("NM: VPN '%s' state -> %u (prev %u)",
+                       vc->name ?: "?", vc->vpn_state, vc->prev_state);
                   }
              }
            else if (!strcmp(key, "Reason"))
@@ -1182,8 +1182,8 @@ enm_vpn_active_bind(struct NM_VPN_Connection *vc, const char *active_path)
                          _vpn_active_props_get_cb, vc, -1,
                          "s", iface);
 
-   DBG("VPN '%s' bound to active_path=%s (iface=%s) pending=%p",
-       vc->name ?: "?", active_path, iface, vc->pending_get_props);
+   L("NM: VPN '%s' bound to active_path=%s (iface=%s) pending=%p",
+     vc->name ?: "?", active_path, iface, vc->pending_get_props);
 }
 
 void

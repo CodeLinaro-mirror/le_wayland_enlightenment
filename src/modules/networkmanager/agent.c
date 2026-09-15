@@ -537,7 +537,7 @@ _agent_ui_request_cb(void *data EINA_UNUSED, E_NM_Agent_Request *req,
    _current_dialog = _dialog_new(req, ssid);
    if (!_current_dialog)
      {
-        ERR("Failed to create SecretAgent dialog");
+        L("NM: Failed to create SecretAgent dialog");
         e_nm_agent_reply_cancel(req);
         return;
      }
