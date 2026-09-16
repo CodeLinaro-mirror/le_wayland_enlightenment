@@ -61,6 +61,7 @@ struct _IBar
    Evas_Coord   dnd_x, dnd_y;
    IBar_Icon   *menu_icon;
    Eina_Bool    focused E_BITFIELD;
+   Eina_Bool    resize_pending E_BITFIELD;
 };
 
 struct _IBar_Icon
@@ -80,6 +81,7 @@ struct _IBar_Icon
    Eina_List       *menu_pending; //clients with menu items pending
    E_Gadcon_Popup  *menu;
    const char      *hashname;
+   const char      *origin_sig;
    int              mouse_down;
    struct
    {
@@ -92,6 +94,12 @@ struct _IBar_Icon
    Eina_Bool       menu_grabbed E_BITFIELD;
    Eina_Bool       starting E_BITFIELD;
 };
+
+/* the label origin signals. single definitions so IBar_Icon->origin_sig can be
+ * compared by pointer to find out whether anything actually changed. */
+static const char _sig_origin_center[] = "e,origin,center";
+static const char _sig_origin_left[] = "e,origin,left";
+static const char _sig_origin_right[] = "e,origin,right";
 
 static IBar        *_ibar_new(Evas_Object *parent, Instance *inst);
 static void         _ibar_free(IBar *b);
@@ -113,7 +121,8 @@ static void         _ibar_icon_empty(IBar_Icon *ic);
 static void         _ibar_sep_create(IBar *b);
 static void         _ibar_icon_signal_emit(IBar_Icon *ic, const char *sig, const char *src);
 static void         _ibar_cb_app_change(void *data, E_Order *eo);
-static void         _ibar_cb_obj_moveresize(void *data, Evas *e, Evas_Object *obj, void *event_info);
+static void         _ibar_cb_obj_move(void *data, Evas *e, Evas_Object *obj, void *event_info);
+static void         _ibar_cb_obj_resize(void *data, Evas *e, Evas_Object *obj, void *event_info);
 static void         _ibar_cb_menu_icon_action_exec(void *data, E_Menu *m, E_Menu_Item *mi);
 static void         _ibar_cb_menu_icon_new(void *data, E_Menu *m, E_Menu_Item *mi);
 static void         _ibar_cb_menu_icon_add(void *data, E_Menu *m, E_Menu_Item *mi);
@@ -292,9 +301,9 @@ _gc_init(E_Gadcon *gc, const char *name, const char *id, const char *style)
                         _ibar_inst_cb_leave, _ibar_inst_cb_drop,
                         drop, 3, x, y, w, h);
    evas_object_event_callback_add(b->o_outerbox, EVAS_CALLBACK_MOVE,
-                                  _ibar_cb_obj_moveresize, inst);
+                                  _ibar_cb_obj_move, inst);
    evas_object_event_callback_add(b->o_outerbox, EVAS_CALLBACK_RESIZE,
-                                  _ibar_cb_obj_moveresize, inst);
+                                  _ibar_cb_obj_resize, inst);
    ibar_config->instances = eina_list_append(ibar_config->instances, inst);
    _ibar_resize_handle(b);
    inst->iconify_provider = e_comp_object_effect_mover_add(80, "e,action,*iconify", _ibar_cb_iconify_provider, inst);
@@ -948,6 +957,9 @@ _ibar_icon_free(IBar_Icon *ic)
 static void
 _ibar_icon_fill(IBar_Icon *ic)
 {
+   /* o_icon/o_icon2 are recreated below and have not seen the origin signal
+    * yet, so force the next move to emit it again. */
+   ic->origin_sig = NULL;
    if (ic->o_icon) evas_object_del(ic->o_icon);
    ic->o_icon = e_icon_add(evas_object_evas_get(ic->ibar->o_box));
    evas_object_name_set(ic->o_icon, "icon");
@@ -1019,16 +1031,35 @@ static void
 _ibar_cb_resize_job(void *data)
 {
    Instance *inst = data;
-   _ibar_resize_handle(inst->ibar);
+   IBar *b = inst->ibar;
+
+   if (b->resize_pending)
+     {
+        b->resize_pending = EINA_FALSE;
+        _ibar_resize_handle(b);
+     }
    _ibar_instance_drop_zone_recalc(inst);
-   inst->ibar->resize_job = NULL;
+   b->resize_job = NULL;
 }
 
 static void
-_ibar_cb_obj_moveresize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_ibar_cb_obj_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Instance *inst = data;
 
+   /* a move leaves the layout alone - only the drop zone follows the box.
+    * relaying out here costs a full elm_box recalc per frame while a shelf
+    * slides in or out. */
+   if (inst->ibar->resize_job) return;
+   inst->ibar->resize_job = ecore_job_add((Ecore_Cb)_ibar_cb_resize_job, inst);
+}
+
+static void
+_ibar_cb_obj_resize(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Instance *inst = data;
+
+   inst->ibar->resize_pending = EINA_TRUE;
    if (inst->ibar->resize_job) return;
    inst->ibar->resize_job = ecore_job_add((Ecore_Cb)_ibar_cb_resize_job, inst);
 }
@@ -1940,42 +1971,51 @@ static void
 _ibar_cb_icon_move(void *data, Evas *e, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
    IBar_Icon *ic;
-   int x, y, w, h, cw, chx, len = 0;
-   const char *sig = "e,origin,center";
-   E_Zone *zone;
+   int x, y, w, h;
+   const char *sig = _sig_origin_center;
 
    ic = data;
    evas_object_geometry_get(ic->o_holder, &x, &y, &w, &h);
    evas_object_move(ic->o_holder2, x, y);
-   evas_output_size_get(e, &cw, NULL);
 
-   edje_object_part_geometry_get(ic->o_holder2, "e.text.label", NULL, NULL, &len, NULL);
-   chx = x + (w / 2);
-   zone = e_comp_object_util_zone_get(obj);
-   if (!zone)
-     {
-        if (x < 1)
-          zone = e_comp_zone_xy_get(0, y);
-        else
-          zone = e_comp_zone_xy_get(e_comp->w - 5, y);
-        if (!zone)
-          zone = eina_list_data_get(e_comp->zones);
-     }
    if ((ic->ibar->inst->orient == E_GADCON_ORIENT_LEFT) ||
        (ic->ibar->inst->orient == E_GADCON_ORIENT_CORNER_LT) ||
        (ic->ibar->inst->orient == E_GADCON_ORIENT_CORNER_LB))
-     sig = "e,origin,left";
+     sig = _sig_origin_left;
    else if ((ic->ibar->inst->orient == E_GADCON_ORIENT_RIGHT) ||
             (ic->ibar->inst->orient == E_GADCON_ORIENT_CORNER_RT) ||
             (ic->ibar->inst->orient == E_GADCON_ORIENT_CORNER_RB))
-     sig = "e,origin,right";
+     sig = _sig_origin_right;
    else if (ic->ibar->inst->orient == E_GADCON_ORIENT_FLOAT)
      {
+        /* only a floating bar picks its origin from where the label lands, and
+         * only here is the label geometry worth forcing an edje recalc for. */
+        int cw, chx, len = 0;
+        E_Zone *zone;
+
+        evas_output_size_get(e, &cw, NULL);
+        edje_object_part_geometry_get(ic->o_holder2, "e.text.label", NULL, NULL, &len, NULL);
+        chx = x + (w / 2);
+        zone = e_comp_object_util_zone_get(obj);
+        if (!zone)
+          {
+             if (x < 1)
+               zone = e_comp_zone_xy_get(0, y);
+             else
+               zone = e_comp_zone_xy_get(e_comp->w - 5, y);
+             if (!zone)
+               zone = eina_list_data_get(e_comp->zones);
+          }
         if (chx - (len / 2) < zone->x)
-          sig = "e,origin,left";
+          sig = _sig_origin_left;
         else if ((chx + (len / 2) > cw) || ((chx + (len / 2) > zone->x + zone->w)))
-          sig = "e,origin,right";
+          sig = _sig_origin_right;
      }
+   /* the origin only changes on reorient, or when a floating bar crosses a
+    * screen edge - re-emitting it on every move runs an edje program per icon
+    * per frame for nothing. */
+   if (ic->origin_sig == sig) return;
+   ic->origin_sig = sig;
    _ibar_icon_signal_emit(ic, sig, "e");
 }
 
