@@ -24,8 +24,6 @@ struct _E_Config_Dialog_Data
    Evas_Object *rel_mode_obj;
    Evas_Object *rel_to_obj;
    Evas_Object *rel_align_obj;
-   Evas_Object *use_profile_obj;
-   Evas_Object *profile_list_obj;
    Evas_Object *scale_custom_obj;
    Evas_Object *scale_value_obj;
    Evas_Object *policy_obj;
@@ -125,7 +123,6 @@ _free_data(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
         eina_stringshare_del(cs->id);
         eina_stringshare_del(cs->rel_to);
         eina_stringshare_del(cs->custom_label_screen);
-        eina_stringshare_del(cs->profile);
         free(cs);
      }
    free(cfdata->params);
@@ -264,126 +261,13 @@ _cb_rot_set(void *data, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
    e_config_dialog_changed_set(cfdata->cfd, EINA_TRUE);
 }
 
-typedef struct _Profile_Item
-{
-   char *profile;
-   E_Config_Dialog_Data *cfdata;
-} Profile_Item;
-
-static void
-_profiles_list_selected_cb(void *data,
-                           Evas_Object *obj EINA_UNUSED,
-                           void *event_info EINA_UNUSED)
-{
-   Profile_Item *p = data;
-   E_Config_Randr2_Screen *cs = _config_screen_find(p->cfdata);
-   if (!cs) return;
-   eina_stringshare_del(cs->profile);
-   cs->profile = eina_stringshare_add(p->profile);
-   e_config_dialog_changed_set(p->cfdata->cfd, EINA_TRUE);
-}
-
-static void
-_profiles_list_item_del_cb(void *data,
-                           Evas_Object *obj EINA_UNUSED,
-                           void *event_info EINA_UNUSED)
-{
-   Profile_Item *p = data;
-   free(p->profile);
-   free(p);
-}
-
-static void
-_basic_profile_list_fill(E_Config_Dialog_Data *cfdata, const char *prof_sel)
-{
-   Evas_Object *list = cfdata->profile_list_obj;
-   Eina_List *names = elm_config_profile_list_get();
-   Eina_List *l;
-   Elm_Object_Item *sel_it = NULL;
-   const char *profile;
-
-   if (!names) return;
-
-   elm_list_clear(list);
-
-   if (!prof_sel)
-     {
-        elm_list_go(list);
-        elm_config_profile_list_free(names);
-        return;
-     }
-
-   EINA_LIST_FOREACH(names, l, profile)
-     {
-        Efreet_Desktop *desk = NULL;
-        const char *label, *ext, *pdir;
-        char buf[PATH_MAX];
-        Elm_Object_Item *list_it;
-        Evas_Object *ic;
-        Profile_Item *p;
-
-        pdir = elm_config_profile_dir_get(profile, EINA_TRUE);
-        if (!pdir) pdir = elm_config_profile_dir_get(profile, EINA_FALSE);
-
-        snprintf(buf, sizeof(buf), "%s/profile.desktop", pdir);
-        desk = efreet_desktop_new(buf);
-        if ((desk) && (desk->name)) label = desk->name;
-        else
-          {
-             if (desk) efreet_desktop_free(desk);
-             if (pdir) elm_config_profile_dir_free(pdir);
-
-             pdir = elm_config_profile_dir_get(profile, EINA_FALSE);
-             snprintf(buf, sizeof(buf), "%s/profile.desktop", pdir);
-             desk = efreet_desktop_new(buf);
-             if ((desk) && (desk->name)) label = desk->name;
-             else label = profile;
-          }
-
-        buf[0] = 0;
-        if (pdir) snprintf(buf, sizeof(buf), "%s/icon.edj", pdir);
-        if ((desk) && (desk->icon) && (pdir))
-          snprintf(buf, sizeof(buf), "%s/%s", pdir, desk->icon);
-        ic = elm_icon_add(list);
-        ext = strrchr(buf, '.');
-        if (ext)
-          {
-             if (!strcmp(ext, ".edj")) elm_image_file_set(ic, buf, "icon");
-             else elm_image_file_set(ic, buf, NULL);
-          }
-
-        evas_object_size_hint_aspect_set(ic, EVAS_ASPECT_CONTROL_VERTICAL,
-                                         1, 1);
-        evas_object_show(ic);
-
-        p = malloc(sizeof(Profile_Item));
-        p->profile = strdup(profile);
-        p->cfdata = cfdata;
-        list_it = elm_list_item_append(list, label, ic, NULL,
-                                       _profiles_list_selected_cb, p);
-        elm_object_item_del_cb_set(list_it, _profiles_list_item_del_cb);
-        if ((prof_sel) && (!strcmp(profile, prof_sel))) sel_it = list_it;
-
-        elm_config_profile_dir_free(pdir);
-
-        if (desk) efreet_desktop_free(desk);
-     }
-
-   elm_list_go(list);
-
-   if (sel_it) elm_list_item_selected_set(sel_it, EINA_TRUE);
-
-   elm_config_profile_list_free(names);
-}
-
 static void
 _basic_screen_info_fill(E_Config_Dialog_Data *cfdata, E_Config_Randr2_Screen *cs, E_Randr2_Screen *s)
 {
    char buf[100];
-   Eina_List *items, *l;
+   Eina_List *l;
    E_Randr2_Mode *m;
    Elm_Object_Item *it, *it_sel;
-   Elm_Widget_Item *iwt;
    void *dt;
    const char *info_screen = "";
 
@@ -507,39 +391,18 @@ _basic_screen_info_fill(E_Config_Dialog_Data *cfdata, E_Config_Randr2_Screen *cs
 
    elm_slider_value_set(cfdata->rel_align_obj, cs->rel_align);
 
-   if (cs->profile)
+   if (cs->scale_multiplier > 0.0)
      {
-        elm_check_state_set(cfdata->use_profile_obj, EINA_TRUE);
-        elm_object_disabled_set(cfdata->profile_list_obj, EINA_FALSE);
-        elm_object_disabled_set(cfdata->scale_custom_obj, EINA_FALSE);
-
-        _basic_profile_list_fill(cfdata, cs->profile);
-
-        if (cs->scale_multiplier > 0.0)
-          {
-             elm_check_state_set(cfdata->scale_custom_obj, EINA_TRUE);
-             elm_object_disabled_set(cfdata->scale_value_obj, EINA_FALSE);
-             elm_slider_value_set(cfdata->scale_value_obj,
-                                  _scale_for_multiplier(cs->scale_multiplier));
-          }
-        else
-          {
-             elm_check_state_set(cfdata->scale_custom_obj, EINA_FALSE);
-             elm_object_disabled_set(cfdata->scale_value_obj, EINA_TRUE);
-             elm_slider_value_set(cfdata->scale_value_obj, elm_config_scale_get());
-          }
+        elm_check_state_set(cfdata->scale_custom_obj, EINA_TRUE);
+        elm_object_disabled_set(cfdata->scale_value_obj, EINA_FALSE);
+        elm_slider_value_set(cfdata->scale_value_obj,
+                             _scale_for_multiplier(cs->scale_multiplier));
      }
    else
      {
-        items = (Eina_List *)elm_list_items_get(cfdata->profile_list_obj);
-        EINA_LIST_FOREACH(items, l, iwt)
-          {
-             elm_list_item_selected_set(iwt, EINA_FALSE);
-          }
-        elm_check_state_set(cfdata->use_profile_obj, EINA_FALSE);
-        elm_object_disabled_set(cfdata->profile_list_obj, EINA_TRUE);
-        elm_object_disabled_set(cfdata->scale_custom_obj, EINA_TRUE);
+        elm_check_state_set(cfdata->scale_custom_obj, EINA_FALSE);
         elm_object_disabled_set(cfdata->scale_value_obj, EINA_TRUE);
+        elm_slider_value_set(cfdata->scale_value_obj, elm_config_scale_get());
      }
 
    if (!cs->rel_to)
@@ -629,36 +492,6 @@ _cb_rel_to_set(void *data, Evas_Object *obj, void *event)
           }
         i++;
      }
-}
-
-static void
-_cb_profile_enabled_changed(void *data, Evas_Object *obj EINA_UNUSED, void *event EINA_UNUSED)
-{
-   E_Config_Dialog_Data *cfdata = data;
-   E_Config_Randr2_Screen *cs = _config_screen_find(cfdata);
-   if (!cs) return;
-   if (elm_check_state_get(obj))
-     {
-        eina_stringshare_del(cs->profile);
-        cs->profile = eina_stringshare_add("standard");
-        _basic_profile_list_fill(cfdata, cs->profile);
-        elm_object_disabled_set(cfdata->profile_list_obj, EINA_FALSE);
-        elm_object_disabled_set(cfdata->scale_custom_obj, EINA_FALSE);
-        if (cs->scale_multiplier > 0.0)
-          elm_object_disabled_set(cfdata->scale_value_obj, EINA_FALSE);
-        else
-          elm_object_disabled_set(cfdata->scale_value_obj, EINA_TRUE);
-     }
-   else
-     {
-        eina_stringshare_del(cs->profile);
-        cs->profile = NULL;
-        elm_list_clear(cfdata->profile_list_obj);
-        elm_object_disabled_set(cfdata->profile_list_obj, EINA_TRUE);
-        elm_object_disabled_set(cfdata->scale_custom_obj, EINA_TRUE);
-        elm_object_disabled_set(cfdata->scale_value_obj, EINA_TRUE);
-     }
-   e_config_dialog_changed_set(cfdata->cfd, EINA_TRUE);
 }
 
 static void
@@ -954,8 +787,6 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data
                   cs->rel_mode = s->config.relative.mode;
                   cs->enabled = s->config.enabled;
                   cs->ignore_disconnect = s->config.ignore_disconnect;
-                  if (s->config.profile)
-                    cs->profile = eina_stringshare_add(s->config.profile);
                   if (e_randr2_cfg)
                     {
                        cs2 = e_randr2_config_screen_find(s, e_randr2_cfg);
@@ -1054,7 +885,7 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data
    bx2 = elm_box_add(win);
    evas_object_size_hint_weight_set(bx2, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(bx2, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_table_pack(tb, bx2, 1, 0, 1, 14);
+   elm_table_pack(tb, bx2, 1, 0, 1, 13);
    evas_object_show(bx2);
 
    o = elm_list_add(win);
@@ -1160,24 +991,8 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data
    o = elm_check_add(win);
    evas_object_size_hint_weight_set(o, 0.0, 0.0);
    evas_object_size_hint_align_set(o, EVAS_HINT_FILL, 0.5);
-   elm_object_text_set(o, _("Use Profile"));
-   elm_table_pack(tb, o, 2, 11, 1, 1);
-   evas_object_show(o);
-   cfdata->use_profile_obj = o;
-   evas_object_smart_callback_add(o, "changed", _cb_profile_enabled_changed, cfdata);
-
-   o = elm_list_add(win);
-   evas_object_size_hint_weight_set(o, 0.0, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_table_pack(tb, o, 2, 12, 1, 1);
-   evas_object_show(o);
-   cfdata->profile_list_obj = o;
-
-   o = elm_check_add(win);
-   evas_object_size_hint_weight_set(o, 0.0, 0.0);
-   evas_object_size_hint_align_set(o, EVAS_HINT_FILL, 0.5);
    elm_object_text_set(o, _("Custom Scale"));
-   elm_table_pack(tb, o, 2, 13, 1, 1);
+   elm_table_pack(tb, o, 2, 11, 1, 1);
    evas_object_show(o);
    cfdata->scale_custom_obj = o;
    evas_object_smart_callback_add(o, "changed", _cb_custom_scale_changed, cfdata);
@@ -1190,12 +1005,11 @@ _basic_create(E_Config_Dialog *cfd, Evas *evas EINA_UNUSED, E_Config_Dialog_Data
    elm_slider_span_size_set(o, 100);
    elm_slider_min_max_set(o, 0.5, 5.5);
    elm_slider_value_set(o, elm_config_scale_get());
-   elm_table_pack(tb, o, 2, 14, 1, 1);
+   elm_table_pack(tb, o, 2, 12, 1, 1);
    evas_object_show(o);
    cfdata->scale_value_obj = o;
    evas_object_smart_callback_add(o, "changed", _cb_scale_value_changed, cfdata);
 
-   _basic_profile_list_fill(cfdata, NULL);
    _basic_screen_info_fill(cfdata, first_cfg, first);
 ///////////////////////////////////////////////////////////////////////
 
@@ -1326,9 +1140,6 @@ _basic_apply(E_Config_Dialog *cfd EINA_UNUSED, E_Config_Dialog_Data *cfdata)
         if (cs->custom_label_screen) eina_stringshare_del(cs->custom_label_screen);
         cs->custom_label_screen = NULL;
         if (cs2->custom_label_screen) cs->custom_label_screen = eina_stringshare_add(cs2->custom_label_screen);
-        if (cs->profile) eina_stringshare_del(cs->profile);
-        cs->profile = NULL;
-        if (cs2->profile) cs->profile = eina_stringshare_add(cs2->profile);
         cs->scale_multiplier = cs2->scale_multiplier;
         L("APPLY %s .... rel mode %i", cs->id, cs->rel_mode);
         cs->enabled = cs2->enabled;

@@ -13,8 +13,6 @@ static void      _e_desk_event_desk_deskshow_free(void *data, void *ev);
 static void      _e_desk_event_desk_name_change_free(void *data, void *ev);
 static void      _e_desk_show_begin(E_Desk *desk, int dx, int dy);
 static void      _e_desk_hide_begin(E_Desk *desk, int dx, int dy);
-static void      _e_desk_event_desk_window_profile_change_free(void *data, void *ev);
-static void      _e_desk_window_profile_change_protocol_set(void);
 
 static E_Desk_Flip_Cb _e_desk_flip_cb = NULL;
 static void *_e_desk_flip_data = NULL;
@@ -24,7 +22,6 @@ E_API int E_EVENT_DESK_BEFORE_SHOW = 0;
 E_API int E_EVENT_DESK_AFTER_SHOW = 0;
 E_API int E_EVENT_DESK_DESKSHOW = 0;
 E_API int E_EVENT_DESK_NAME_CHANGE = 0;
-E_API int E_EVENT_DESK_WINDOW_PROFILE_CHANGE = 0;
 
 EINTERN int
 e_desk_init(void)
@@ -34,7 +31,6 @@ e_desk_init(void)
    E_EVENT_DESK_AFTER_SHOW = ecore_event_type_new();
    E_EVENT_DESK_DESKSHOW = ecore_event_type_new();
    E_EVENT_DESK_NAME_CHANGE = ecore_event_type_new();
-   E_EVENT_DESK_WINDOW_PROFILE_CHANGE = ecore_event_type_new();
    return 1;
 }
 
@@ -42,46 +38,6 @@ EINTERN int
 e_desk_shutdown(void)
 {
    return 1;
-}
-
-static void
-_do_profile(E_Desk *desk, E_Randr2_Screen *sc)
-{
-   int scale = 100;
-   char buf[PATH_MAX], buf2[PATH_MAX + 256];
-
-   eina_stringshare_del(desk->window_profile);
-   desk->window_profile = NULL;
-
-   if (sc->config.scale_multiplier > 0.0)
-     {
-        scale = (int)(sc->config.scale_multiplier * 100.0);
-     }
-   else if (e_config->scale.use_dpi)
-     {
-        double dpi = e_randr2_screen_dpi_get(sc);
-
-        if ((dpi > 0.0) && (e_config->scale.base_dpi > 0))
-          scale = (int)((100.0 * dpi) / (double)e_config->scale.base_dpi);
-     }
-
-   if (scale == 100)
-     snprintf(buf, sizeof(buf), "%s", sc->config.profile);
-   else
-     {
-        snprintf(buf, sizeof(buf), ".scale-%04i-%s",
-                 scale, sc->config.profile);
-        if (!elm_config_profile_exists(buf))
-          {
-             snprintf(buf2, sizeof(buf2),
-                      "%s/enlightenment/utils/enlightenment_elm_cfgtool "
-                      "set %s %s 'scale-mul %i'",
-                      e_prefix_lib_get(), sc->config.profile, buf, scale);
-             if (system(buf2) != 0)
-               ERR("Error code from trying to run \"%s\"", buf2);
-          }
-     }
-   desk->window_profile = eina_stringshare_add(buf);
 }
 
 E_API E_Desk *
@@ -97,8 +53,6 @@ e_desk_new(E_Zone *zone, int x, int y)
 
    desk = E_OBJECT_ALLOC(E_Desk, E_DESK_TYPE, _e_desk_free);
    if (!desk) return NULL;
-
-   _e_desk_window_profile_change_protocol_set();
 
    desk->zone = zone;
    desk->x = x;
@@ -122,14 +76,6 @@ e_desk_new(E_Zone *zone, int x, int y)
 
         snprintf(buff, sizeof(buff), _("Desktop %d,%d"), desk->x, desk->y);
         desk->name = eina_stringshare_add(buff);
-     }
-
-   /* Get window profile name for current desktop */
-   if (zone->randr2_id)
-     {
-        E_Randr2_Screen *sc = e_randr2_screen_id_find(zone->randr2_id);
-
-        if ((sc) && (sc->config.profile)) _do_profile(desk, sc);
      }
 
    return desk;
@@ -585,44 +531,6 @@ e_desk_prev(E_Zone *zone)
 }
 
 E_API void
-e_desk_window_profile_set(E_Desk *desk,
-                          const char *profile)
-{
-   E_Event_Desk_Window_Profile_Change *ev;
-
-   E_OBJECT_CHECK(desk);
-   E_OBJECT_TYPE_CHECK(desk, E_DESK_TYPE);
-
-   eina_stringshare_replace(&desk->window_profile, profile);
-
-   ev = E_NEW(E_Event_Desk_Window_Profile_Change, 1);
-   ev->desk = desk;
-   e_object_ref(E_OBJECT(desk));
-   ecore_event_add(E_EVENT_DESK_WINDOW_PROFILE_CHANGE, ev,
-                   _e_desk_event_desk_window_profile_change_free, NULL);
-}
-
-E_API void
-e_desk_window_profile_update(E_Zone *zone)
-{
-   if (zone->randr2_id)
-     {
-        E_Randr2_Screen *sc = e_randr2_screen_id_find(zone->randr2_id);
-
-        if ((sc) && (sc->config.profile))
-          {
-             int x, y;
-
-             for (y = 0; y < zone->desk_y_count; y++)
-               {
-                  for (x = 0; x < zone->desk_x_count; x++)
-                    _do_profile(zone->desks[x + (y * zone->desk_x_count)], sc);
-               }
-          }
-     }
-}
-
-E_API void
 e_desk_flip_cb_set(E_Desk_Flip_Cb cb, const void *data)
 {
    _e_desk_flip_cb = cb;
@@ -776,14 +684,6 @@ _e_desk_event_desk_name_change_free(void *data EINA_UNUSED, void *event)
    free(ev);
 }
 
-static void
-_e_desk_event_desk_window_profile_change_free(void *data EINA_UNUSED, void *event)
-{
-   E_Event_Desk_Window_Profile_Change *ev = event;
-   e_object_unref(E_OBJECT(ev->desk));
-   E_FREE(ev);
-}
-
 static Eina_Bool
 _e_desk_transition_setup(E_Client *ec, int dx, int dy, int state)
 {
@@ -900,21 +800,4 @@ _e_desk_hide_begin(E_Desk *desk, int dx, int dy)
           }
         e_client_comp_hidden_set(ec, EINA_TRUE);
      }
-}
-
-static void
-_e_desk_window_profile_change_protocol_set(void)
-{
-#ifndef HAVE_WAYLAND_ONLY
-   static Eina_Bool is_set = EINA_FALSE;
-
-   if (!is_set)
-     {
-        if (e_comp->root)
-          {
-             is_set = EINA_TRUE;
-             ecore_x_e_window_profile_supported_set(e_comp->root, EINA_TRUE);
-          }
-     }
-#endif
 }

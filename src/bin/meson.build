@@ -496,14 +496,6 @@ executable('enlightenment_thumb',
            install            : true
           )
 
-executable('enlightenment_elm_cfgtool',
-           [ 'e_elm_cfgtool_main.c' ],
-           include_directories: include_directories('../..'),
-           dependencies       : [ dep_m, dep_elementary ],
-           install_dir        : dir_e_utils,
-           install            : true
-          )
-
 executable('enlightenment_wallpaper_gen',
            [ 'e_wallpaper_gen_main.c' ],
            include_directories: include_directories('../..'),

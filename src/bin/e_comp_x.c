@@ -616,9 +616,6 @@ _e_comp_x_client_new_helper(E_Client *ec)
                video_parent = EINA_TRUE;
              else if (atoms[i] == ECORE_X_ATOM_E_VIDEO_POSITION)
                video_position = EINA_TRUE;
-             /* loop to check for window profile list atom */
-             else if (atoms[i] == ECORE_X_ATOM_E_WINDOW_PROFILE_SUPPORTED)
-               ec->e.fetch.profile = 1;
              else if (atoms[i] == ECORE_X_ATOM_E_STACK_TYPE)
                ec->e.fetch.stack = 1;
              else if (atoms[i] == ATM_GTK_FRAME_EXTENTS)
@@ -2294,16 +2291,6 @@ _e_comp_x_property(void *data EINA_UNUSED, int type EINA_UNUSED, Ecore_X_Event_W
              EC_CHANGED(ec);
           }
      }
-   else if (ev->atom == ECORE_X_ATOM_E_WINDOW_PROFILE_SUPPORTED)
-     {
-        ec->e.fetch.profile = 1;
-        EC_CHANGED(ec);
-     }
-   else if (ev->atom == ECORE_X_ATOM_E_WINDOW_PROFILE_AVAILABLE_LIST)
-     {
-        ec->e.fetch.profile = 1;
-        EC_CHANGED(ec);
-     }
    else if (ev->atom == ATM_GTK_FRAME_EXTENTS)
      {
         _e_comp_x_client_data_get(ec)->fetch_gtk_frame_extents = 1;
@@ -2339,30 +2326,6 @@ _e_comp_x_message(void *data EINA_UNUSED, int type EINA_UNUSED, Ecore_X_Event_Cl
      {
         ec->netwm.fetch.opacity = 1;
         EC_CHANGED(ec);
-     }
-   else if (ev->message_type == ECORE_X_ATOM_E_WINDOW_PROFILE_CHANGE)
-     {
-        if (ec->e.state.profile.use)
-          {
-             char *p = ecore_x_atom_name_get(ev->data.l[1]);
-             if (e_client_desk_window_profile_available_check(ec, p))
-               {
-                  if (e_util_strcmp(p, ec->desk->window_profile))
-                    {
-                       E_Desk *old_desk = ec->desk;
-                       E_Desk *desk = e_comp_desk_window_profile_get(p);
-                       Eina_Bool was_focused = e_client_stack_focused_get(ec);
-
-                       if ((desk) && (desk != old_desk))
-                         {
-                            e_client_desk_set(ec, desk);
-                            if (was_focused)
-                              e_desk_last_focused_focus(old_desk);
-                         }
-                    }
-               }
-             free(p);
-          }
      }
    else if (ev->message_type == ECORE_X_ATOM_NET_ACTIVE_WINDOW)
      {
@@ -2422,33 +2385,6 @@ _e_comp_x_message(void *data EINA_UNUSED, int type EINA_UNUSED, Ecore_X_Event_Cl
                }
              else
                evas_object_raise(ec->frame);
-          }
-     }
-   else if (ev->message_type == ECORE_X_ATOM_E_WINDOW_PROFILE_CHANGE_DONE)
-     {
-        if ((ec->e.state.profile.use) &&
-            (ec->e.state.profile.wait_for_done))
-          {
-             char *p = ecore_x_atom_name_get(ev->data.l[1]);
-             if (!e_util_strcmp(ec->e.state.profile.wait, p))
-               {
-                  E_Desk *old_desk = ec->desk;
-                  E_Desk *desk = ec->e.state.profile.wait_desk;
-                  Eina_Bool was_focused = e_client_stack_focused_get(ec);
-
-                  eina_stringshare_replace(&ec->e.state.profile.wait, NULL);
-                  ec->e.state.profile.wait_for_done = 0;
-                  if ((desk) && (desk != old_desk))
-                    {
-                       eina_stringshare_replace(&ec->e.state.profile.name,
-                                                desk->window_profile);
-                       e_client_desk_set(ec, desk);
-                       if (was_focused)
-                         e_desk_last_focused_focus(old_desk);
-                    }
-                  e_client_desk_window_profile_wait_desk_set(ec, NULL);
-               }
-             free(p);
           }
      }
    else if (ev->message_type == ATM_NETWM_SHOW_WINDOW_MENU)
@@ -3747,7 +3683,6 @@ _e_comp_x_hook_client_fetch(void *d EINA_UNUSED, E_Client *ec)
 {
    Ecore_X_Window win, pwin;
    int rem_change = 0;
-   Eina_Bool need_desk_set = EINA_FALSE;
    E_Comp_X_Client_Data *cd;
 
    E_COMP_X_PIXMAP_CHECK;
@@ -3879,69 +3814,6 @@ _e_comp_x_hook_client_fetch(void *d EINA_UNUSED, E_Client *ec)
         cd->stack = ecore_x_e_stack_type_get(win);
         ec->e.state.stack = !!cd->stack;
         ec->e.fetch.stack = 0;
-     }
-   if (ec->e.fetch.profile)
-     {
-        const char **list = NULL;
-        int n, i, res;
-        unsigned int use;
-
-        ec->e.state.profile.use = 0;
-
-        if (ec->e.state.profile.name)
-          {
-             eina_stringshare_del(ec->e.state.profile.name);
-             ec->e.state.profile.name = NULL;
-          }
-
-        if (ec->e.state.profile.available_list)
-          {
-             for (i = 0; i < ec->e.state.profile.num; i++)
-               {
-                  if (ec->e.state.profile.available_list[i])
-                    {
-                       eina_stringshare_del(ec->e.state.profile.available_list[i]);
-                       ec->e.state.profile.available_list[i] = NULL;
-                    }
-               }
-             E_FREE(ec->e.state.profile.available_list);
-             ec->e.state.profile.available_list = NULL;
-          }
-        ec->e.state.profile.num = 0;
-
-        res = ecore_x_window_prop_card32_get(win,
-                                             ECORE_X_ATOM_E_WINDOW_PROFILE_SUPPORTED,
-                                             &use,
-                                             1);
-        if ((res == 1) && (use == 1))
-          {
-             Ecore_X_Atom val;
-             res = ecore_x_window_prop_atom_get(win,
-                                                ECORE_X_ATOM_E_WINDOW_PROFILE_CHANGE,
-                                                &val, 1);
-             if (res == 1)
-               {
-                  char *name = ecore_x_atom_name_get(val);
-                  if (name)
-                    {
-                       ec->e.state.profile.set = eina_stringshare_add(name);
-                       free(name);
-                    }
-               }
-
-             if (ecore_x_e_window_available_profiles_get(win, &list, &n))
-               {
-                  ec->e.state.profile.available_list = E_NEW(const char *, n);
-                  for (i = 0; i < n; i++)
-                    ec->e.state.profile.available_list[i] = eina_stringshare_add(list[i]);
-                  ec->e.state.profile.num = n;
-               }
-             need_desk_set = EINA_TRUE;
-             ec->e.state.profile.use = 1;
-             free(list);
-          }
-
-        ec->e.fetch.profile = 0;
      }
    if (ec->changes.prop || ec->netwm.fetch.type)
      {
@@ -4928,79 +4800,6 @@ _e_comp_x_hook_client_fetch(void *d EINA_UNUSED, E_Client *ec)
         cd->fetch_exe = 0;
      }
 
-   if (need_desk_set)
-     {
-        E_Desk *desk = NULL;
-        const char *p, *p2;
-        Eina_Bool set = EINA_FALSE;
-        int i;
-
-        /* set desktop using given initial profile */
-        p = ec->e.state.profile.set;
-        if (p)
-          {
-             if (!e_util_strcmp(p, ec->desk->window_profile))
-               {
-                  e_client_desk_window_profile_wait_desk_set(ec, ec->desk);
-                  set = EINA_TRUE;
-               }
-             else
-               {
-                  desk = e_comp_desk_window_profile_get(p);
-                  if (desk)
-                    {
-                       e_client_desk_set(ec, desk);
-                       set = EINA_TRUE;
-                    }
-               }
-          }
-
-        if (!set)
-          {
-             /* try to find desktop using available profile list */
-             for (i = 0; i < ec->e.state.profile.num; i++)
-               {
-                  p2 = ec->e.state.profile.available_list[i];
-                  if (!e_util_strcmp(p2, ec->desk->window_profile))
-                    {
-                       eina_stringshare_replace(&ec->e.state.profile.set, p2);
-                       e_client_desk_window_profile_wait_desk_set(ec, ec->desk);
-                       set = EINA_TRUE;
-                       break;
-                    }
-               }
-             if (!set)
-               {
-                  for (i = 0; i < ec->e.state.profile.num; i++)
-                    {
-                       p2 = ec->e.state.profile.available_list[i];
-                       desk = e_comp_desk_window_profile_get(p2);
-                       if (desk)
-                         {
-                            e_client_desk_set(ec, desk);
-                            set = EINA_TRUE;
-                            break;
-                         }
-                    }
-               }
-          }
-
-        if ((!set) && ec->desk)
-          {
-             eina_stringshare_replace(&ec->e.state.profile.set, ec->desk->window_profile);
-             e_client_desk_window_profile_wait_desk_set(ec, ec->desk);
-          }
-     }
-
-   if (ec->e.state.profile.set)
-     {
-        L("E: sent profile set req to 0x%x [%s]", win, ec->e.state.profile.set);
-        ecore_x_e_window_profile_change_request_send(win,
-                                                     ec->e.state.profile.set);
-        eina_stringshare_replace(&ec->e.state.profile.wait, ec->e.state.profile.set);
-        ec->e.state.profile.wait_for_done = 1;
-        eina_stringshare_replace(&ec->e.state.profile.set, NULL);
-     }
    if (cd->fetch_gtk_frame_extents)
      {
         unsigned int *extents;
@@ -6062,7 +5861,6 @@ _e_comp_x_setup(Ecore_X_Window root, int w, int h)
      }
 
    e_comp_x = e_comp->x_comp_data = E_NEW(E_Comp_X_Data, 1);
-   ecore_x_e_window_profile_supported_set(root, EINA_TRUE);
    e_comp->cm_selection = ecore_x_window_input_new(root, 0, 0, 1, 1);
    if (!e_comp->cm_selection) return EINA_FALSE;
    ecore_x_icccm_name_class_set(e_comp->cm_selection, "comp", "cm_selection");

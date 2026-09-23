@@ -451,7 +451,6 @@ struct _E_Config
    Eina_List  *menu_applications;
    unsigned char exe_always_single_instance; // GUI
    unsigned char explicit_date_time; // GUI
-   Eina_List *screen_profiles;
 };
 
 struct E_Config_Bindings

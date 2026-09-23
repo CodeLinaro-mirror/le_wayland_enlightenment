@@ -90,7 +90,6 @@ struct _E_Randr2_Screen
       Eina_Bool             configured E_BITFIELD; // has screen been configured by e?
       Eina_Bool             ignore_disconnect E_BITFIELD; // ignore disconnects for this screen...
 
-      char                 *profile; // profile name to use on this screen
       double                scale_multiplier; // if 0.0 - then dont multiply scale
    } config;
 };
@@ -124,7 +123,6 @@ struct _E_Config_Randr2_Screen
 
    const char    *custom_label_screen; // name of the screen device attached
 
-   const char    *profile;
    double         scale_multiplier;
 };
 

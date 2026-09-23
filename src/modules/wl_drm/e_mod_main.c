@@ -466,13 +466,7 @@ _drm2_randr_create(void)
                s->info.can_rot_270 = EINA_TRUE;
 
              if (cs)
-               {
-                  if (cs->profile)
-                    s->config.profile = strdup(cs->profile);
-                  else
-                    s->config.profile = NULL;
-                  s->config.scale_multiplier = cs->scale_multiplier;
-               }
+               s->config.scale_multiplier = cs->scale_multiplier;
           }
 
         zone = e_zone_for_id_get(s->id);

@@ -80,7 +80,6 @@ src/bin/e_dnd.c
 src/bin/e_dnd.h
 src/bin/e_dpms.c
 src/bin/e_dpms.h
-src/bin/e_elm_cfgtool_main.c
 src/bin/e_entry_dialog.c
 src/bin/e_entry_dialog.h
 src/bin/e_env.c

@@ -521,18 +521,6 @@ struct E_Client
          Ecore_Window video_parent;
          E_Client      *video_parent_client;
          Eina_List     *video_child;
-         struct
-         {
-            Eina_Stringshare *name;
-            Eina_Stringshare **available_list;
-            Eina_Stringshare *set;
-            Eina_Stringshare *wait;
-            E_Desk           *wait_desk;
-            E_Object_Delfn   *wait_desk_delfn;
-            int               num;
-            unsigned char     wait_for_done E_BITFIELD;
-            unsigned char     use E_BITFIELD;
-         } profile;
          Eina_Bool stack E_BITFIELD;
          unsigned char      centered E_BITFIELD;
          unsigned char      video E_BITFIELD;
@@ -543,7 +531,6 @@ struct E_Client
          unsigned char state E_BITFIELD;
          unsigned char video_parent E_BITFIELD;
          unsigned char video_position E_BITFIELD;
-         unsigned char profile E_BITFIELD;
          unsigned char stack E_BITFIELD;
       } fetch;
    } e;
@@ -875,8 +862,6 @@ E_API void e_client_redirected_set(E_Client *ec, Eina_Bool set);
 E_API void e_client_next_mouse_action_ignore(E_Client *ec);
 E_API Eina_Bool e_client_is_stacking(const E_Client *ec);
 E_API Eina_Bool e_client_has_xwindow(const E_Client *ec);
-E_API Eina_Bool e_client_desk_window_profile_available_check(E_Client *ec, const char *profile);
-E_API void      e_client_desk_window_profile_wait_desk_set(E_Client *ec, E_Desk *desk);
 E_API void      e_client_layout_cb_set(E_Client_Layout_Cb cb);
 E_API Eina_List *e_client_stack_list_prepare(E_Client *ec);
 E_API void       e_client_stack_list_finish(Eina_List *list);

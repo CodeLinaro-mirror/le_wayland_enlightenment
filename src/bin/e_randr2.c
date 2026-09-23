@@ -78,7 +78,6 @@ e_randr2_init(void)
    E_CONFIG_VAL(D, T, enabled, UCHAR);
    E_CONFIG_VAL(D, T, ignore_disconnect, UCHAR);
    E_CONFIG_VAL(D, T, custom_label_screen, STR);
-   E_CONFIG_VAL(D, T, profile, STR);
    E_CONFIG_VAL(D, T, scale_multiplier, DOUBLE);
 
    _e_randr2_cfg_edd = E_CONFIG_DD_NEW("E_Config_Randr2", E_Config_Randr2);
@@ -369,7 +368,6 @@ _info_free(E_Randr2 *r)
         free(s->info.edid);
         EINA_LIST_FREE(s->info.modes, m) free(m);
         free(s->config.relative.to);
-        free(s->config.profile);
         free(s);
      }
    free(r);
@@ -431,7 +429,6 @@ _config_free(E_Config_Randr2 *cfg)
         eina_stringshare_del(cs->id);
         eina_stringshare_del(cs->rel_to);
         eina_stringshare_del(cs->custom_label_screen);
-        eina_stringshare_del(cs->profile);
         free(cs);
      }
    free(cfg);
@@ -544,17 +541,6 @@ _config_update(E_Randr2 *r, E_Config_Randr2 *cfg, Eina_Bool update_only)
                }
              cs->rotation = s->config.rotation;
              cs->priority = s->config.priority;
-             if (cs->profile)
-               {
-                  L("RRR: store config profile '%s'", cs->profile);
-                  free(s->config.profile);
-                  s->config.profile = strdup(cs->profile);
-               }
-             else
-               {
-                  free(s->config.profile);
-                  s->config.profile = NULL;
-               }
              L("RRR: store scale mul %1.5f", cs->scale_multiplier);
              s->config.scale_multiplier = cs->scale_multiplier;
              s->config.ignore_disconnect = cs->ignore_disconnect;
@@ -583,9 +569,6 @@ _config_really_apply(E_Randr2_Screen *s, E_Config_Randr2_Screen *cs)
         else s->config.relative.to = NULL;
         s->config.relative.mode = cs->rel_mode;
         s->config.relative.align = cs->rel_align;
-        free(s->config.profile);
-        if (cs->profile) s->config.profile = strdup(cs->profile);
-        else s->config.profile = NULL;
         s->config.scale_multiplier = cs->scale_multiplier;
         s->config.ignore_disconnect = cs->ignore_disconnect;
         L("RRR: really apply '%s' ignore discon %i", s->info.name, s->config.ignore_disconnect);
@@ -607,8 +590,6 @@ _config_really_apply(E_Randr2_Screen *s, E_Config_Randr2_Screen *cs)
         s->config.relative.to = NULL;
         s->config.relative.mode = E_RANDR2_RELATIVE_NONE;
         s->config.relative.align = 0.0;
-        free(s->config.profile);
-        s->config.profile = NULL;
         s->config.scale_multiplier = 0.0;
         s->config.ignore_disconnect = EINA_FALSE;
      }

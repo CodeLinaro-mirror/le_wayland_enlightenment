@@ -580,7 +580,6 @@ e_comp_canvas_init(int w, int h)
              E_Zone *zone = e_zone_new(scr->screen, scr->escreen,
                                        scr->x, scr->y, scr->w, scr->h);
              if (scr->id) zone->randr2_id = strdup(scr->id);
-             e_desk_window_profile_update(zone);
           }
      }
    else
@@ -675,35 +674,6 @@ e_comp_zone_id_get(int id)
      {
         if (zone->id == id) return zone;
      }
-   return NULL;
-}
-
-E_API E_Desk *
-e_comp_desk_window_profile_get(const char *profile)
-{
-   Eina_List *l = NULL;
-   E_Zone *zone = NULL;
-   int x, y;
-
-   EINA_SAFETY_ON_NULL_RETURN_VAL(profile, NULL);
-
-   EINA_LIST_FOREACH(e_comp->zones, l, zone)
-     {
-        for (x = 0; x < zone->desk_x_count; x++)
-          {
-             for (y = 0; y < zone->desk_y_count; y++)
-               {
-                  E_Desk *desk = e_desk_at_xy_get(zone, x, y);
-                  if (desk)
-                    {
-                       if (e_object_is_del(E_OBJECT(desk))) continue;
-                       if (!e_util_strcmp(desk->window_profile, profile))
-                         return desk;
-                    }
-               }
-          }
-     }
-
    return NULL;
 }
 
@@ -803,14 +773,12 @@ e_comp_canvas_update(void)
                   free(zone->randr2_id);
                   zone->randr2_id = NULL;
                   if (scr->id) zone->randr2_id = strdup(scr->id);
-                  e_desk_window_profile_update(zone);
                }
              else
                {
                   zone = e_zone_new(scr->screen, scr->escreen,
                                     scr->x, scr->y, scr->w, scr->h);
                   if (scr->id) zone->randr2_id = strdup(scr->id);
-                  e_desk_window_profile_update(zone);
                   L("@@@ NEW ZONE = %p", zone);
                   changed = EINA_TRUE;
                }
