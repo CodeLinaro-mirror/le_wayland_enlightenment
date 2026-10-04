@@ -141,6 +141,8 @@ _fill_data(E_Config_Dialog_Data *cfdata)
      cfdata->bg_method = E_DESKLOCK_BACKGROUND_METHOD_THEME;
    else if (!e_util_strcmp(bg->file, "user_background"))
      cfdata->bg_method = E_DESKLOCK_BACKGROUND_METHOD_WALLPAPER;
+   else if (e_util_glob_match(bg->file, "/*"))
+     cfdata->bg_method = E_DESKLOCK_BACKGROUND_METHOD_CUSTOM;
    else
      cfdata->bg_method = E_DESKLOCK_BACKGROUND_METHOD_THEME_DESKLOCK;
 
