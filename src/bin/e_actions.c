@@ -3485,12 +3485,11 @@ _e_actions_profiles_create(void)
 {
    E_Action *act;
    Eina_List *profiles, *l;
-   int i = 0;
 
    ACT_GO_KEY(profile_switch);
 
    profiles = e_config_profile_list();
-   for (i = 0, l = profiles; l; l = l->next, i++)
+   for (l = profiles; l; l = l->next)
      {
         Efreet_Desktop *desk = NULL;
         char *prof, *pdir, buff[PATH_MAX];

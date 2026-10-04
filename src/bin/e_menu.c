@@ -1753,7 +1753,7 @@ _e_menu_items_layout_update(E_Menu *m)
    int min_submenu_w = 0, min_submenu_h = 0;
    int min_toggle_w = 0, min_toggle_h = 0;
    int min_w = 0, min_h = 1;
-   int zh = 0, ms = 0, maxh = 0;
+   int zh = 0, maxh = 0;
    unsigned int cur_items = 0, max_items = -1;
 
    if (!m->zone) return;
@@ -1842,7 +1842,6 @@ _e_menu_items_layout_update(E_Menu *m)
              E_FILL(mi->separator_object);
              evas_object_size_hint_min_set(mi->separator_object, mi->separator_w, mi->separator_h);
              evas_object_size_hint_max_set(mi->separator_object, -1, mi->separator_h);
-             ms += mi->separator_h;
              continue;
           }
         E_WEIGHT(mi->toggle_object, 0, toggles_on);
@@ -1875,7 +1874,6 @@ _e_menu_items_layout_update(E_Menu *m)
         E_WEIGHT(mi->bg_object, 0, 1);
         E_FILL(mi->bg_object);
         evas_object_size_hint_min_set(mi->bg_object, mw, mh);
-        ms += mh;
      }
    elm_box_recalculate(m->container_object);
    evas_object_size_hint_min_get(m->container_object, &bw, &bh);

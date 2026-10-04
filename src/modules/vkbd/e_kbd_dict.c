@@ -205,7 +205,7 @@ _e_kbd_dict_lookup_build(E_Kbd_Dict *kd)
 {
    const char *p, *e, *eol, *base;
    int glyphs[2], pglyphs[2];
-   int i, j, line = 0;
+   int i, j;
 
    p = base = kd->file.dict;
    e = p + kd->file.size;
@@ -219,7 +219,6 @@ _e_kbd_dict_lookup_build(E_Kbd_Dict *kd)
      {
         eol = strchr(p, '\n');
         if (!eol) break;
-        line++;
         if ((p - base) >= 0x7fffffff)
           {
              ERR("DICT %s TOO BIG! must be < 2GB", kd->file.file);

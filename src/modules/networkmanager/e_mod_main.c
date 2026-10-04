@@ -1633,7 +1633,7 @@ _enm_popup_update(struct NM_Manager *nm, E_NM_Instance *inst)
 {
    Evas_Object *gl = inst->ui.popup.genlist;
    struct _Popup_Entry desired[256];
-   int want_n, i, eth_count = 0, wifi_count = 0, bt_count = 0;
+   int want_n, i, eth_count = 0,/* wifi_count = 0,*/ bt_count = 0;
    Eina_Hash *eth_idx, *ap_idx, *bt_idx, *vpn_idx;
    Eina_List *orphans = NULL;
    Elm_Object_Item *it, *prev;
@@ -1655,8 +1655,9 @@ _enm_popup_update(struct NM_Manager *nm, E_NM_Instance *inst)
    want_n = _enm_popup_build_entries(nm, desired, 256);
    for (i = 0; i < want_n; i++)
      {
-        if (desired[i].kind == ENM_ENTRY_WIFI) wifi_count++;
-        else if (desired[i].kind == ENM_ENTRY_BLUETOOTH) bt_count++;
+/*        if (desired[i].kind == ENM_ENTRY_WIFI) wifi_count++;
+          else */
+        if (desired[i].kind == ENM_ENTRY_BLUETOOTH) bt_count++;
         else eth_count++;
      }
 

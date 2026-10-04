@@ -340,7 +340,7 @@ e_hints_client_stacking_set(void)
 {
 #ifdef HAVE_WAYLAND_ONLY
 #else
-   unsigned int c, i = 0, non_x = 0, count = 0;
+   unsigned int c, i = 0, count = 0;
    Ecore_X_Window *clients = NULL;
    const char *name;
 
@@ -358,7 +358,6 @@ e_hints_client_stacking_set(void)
           {
              if (e_pixmap_type_get(ec->pixmap) != E_PIXMAP_TYPE_X)
                {
-                  non_x++;
                   continue;
                }
              name = evas_object_name_get(ec->frame);

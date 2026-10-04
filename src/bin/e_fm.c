@@ -3798,7 +3798,7 @@ _e_fm2_queue_process(Evas_Object *obj)
    E_Fm2_Smart_Data *sd;
    E_Fm2_Icon *ic, *ic2;
    Eina_List *l, **ll;
-   int added = 0, i, p0, p1, n, v;
+   int i, p0, p1, n, v;
    double t;
    char buf[4096];
 
@@ -3900,7 +3900,6 @@ _e_fm2_queue_process(Evas_Object *obj)
              sd->tmp.last_insert = eina_list_last(sd->icons);
           }
         sd->icons_place = eina_list_append(sd->icons_place, ic);
-        added++;
         /* if we spent more than 1/20th of a second inserting - give up
          * for now */
         if ((_e_fm2_toomany_get(sd)) && (!sd->toomany))
