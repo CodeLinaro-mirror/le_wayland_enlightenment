@@ -4159,7 +4159,7 @@ e_client_maximize(E_Client *ec, E_Maximize max)
           {
              /* Horizontal hasn't been set */
              if (ec->changes.pos)
-               e_comp_object_frame_xy_adjust(ec->frame, ec->x, 0, &ec->saved.x, NULL);
+               e_comp_object_frame_xy_unadjust(ec->frame, ec->x, 0, &ec->saved.x, NULL);
              else
                ec->saved.x = ec->client.x;
              ec->saved.x -= ec->zone->x;
@@ -4170,7 +4170,7 @@ e_client_maximize(E_Client *ec, E_Maximize max)
           {
              /* Vertical hasn't been set */
              if (ec->changes.pos)
-               e_comp_object_frame_xy_adjust(ec->frame, 0, ec->y, NULL, &ec->saved.y);
+               e_comp_object_frame_xy_unadjust(ec->frame, 0, ec->y, NULL, &ec->saved.y);
              else
                ec->saved.y = ec->client.y;
              ec->saved.y -= ec->zone->y;
@@ -4402,7 +4402,7 @@ e_client_fullscreen(E_Client *ec, E_Fullscreen policy)
    else
      {
         if (ec->changes.pos)
-          e_comp_object_frame_xy_adjust(ec->frame, ec->x, ec->y, &ec->saved.x, &ec->saved.y);
+          e_comp_object_frame_xy_unadjust(ec->frame, ec->x, ec->y, &ec->saved.x, &ec->saved.y);
         else
           {
              ec->saved.x = ec->client.x;
