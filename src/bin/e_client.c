@@ -3798,6 +3798,28 @@ e_client_focused_set(E_Client *ec)
      e_client_desk_set(ec, e_desk_current_get(ec->zone));
 }
 
+static Eina_Bool
+_e_client_have_mouse_buttons_pressed(void)
+{
+#ifndef HAVE_WAYLAND_ONLY
+  if (e_comp->comp_type != E_PIXMAP_TYPE_WL)
+    {
+      if (ecore_x_pointer_buttons_pressed_get(e_comp->root))
+        return EINA_TRUE;
+    }
+#endif
+#ifdef HAVE_WAYLAND
+# ifndef HAVE_WAYLAND_ONLY
+  else
+# endif
+    {
+// XXX: how to figure out if any mouse buttopns are pessed in wayland mode?
+      return EINA_FALSE;
+    }
+# endif
+  return EINA_FALSE;
+}
+
 E_API void
 e_client_activate(E_Client *ec, Eina_Bool just_do_it)
 {
@@ -3840,7 +3862,9 @@ e_client_activate(E_Client *ec, Eina_Bool just_do_it)
                 causing the pointer to jump back and forth.  */
              if ((e_config->focus_policy != E_FOCUS_CLICK) && (!ec->new_client) &&
                  (!e_config->disable_all_pointer_warps) &&
-                 (!e_util_strcmp(ec->icccm.name, "VCLSalFrame")))
+                 (!e_util_strcmp(ec->icccm.name, "VCLSalFrame")) &&
+                 (!_e_client_have_mouse_buttons_pressed())
+                )
                ecore_evas_pointer_warp(e_comp->ee,
                                        ec->x + (ec->w / 2), ec->y + (ec->h / 2));
              evas_object_focus_set(ec->frame, 1);
@@ -5551,6 +5575,7 @@ E_API int
 e_client_pointer_warp_to_center_now(E_Client *ec)
 {
    if (e_config->disable_all_pointer_warps) return 0;
+   if (_e_client_have_mouse_buttons_pressed()) return 0;
    if (warp_client == ec)
      {
         ecore_evas_pointer_warp(e_comp->ee, warp_to_x, warp_to_y);
@@ -5575,6 +5600,7 @@ e_client_pointer_warp_to_center(E_Client *ec)
    if (ec->override) return 0;
    if (!ec->zone) return 0;
    if (e_config->disable_all_pointer_warps) return 0;
+   if (_e_client_have_mouse_buttons_pressed()) return 0;
    /* Only warp the pointer if it is not already in the area of
     * the given border */
    ecore_evas_pointer_xy_get(e_comp->ee, &x, &y);
