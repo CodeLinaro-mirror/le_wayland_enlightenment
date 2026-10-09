@@ -282,9 +282,8 @@ _e_comp_x_client_icon_deduplicate(Ecore_X_Icon *icons, int num_icons)
             (!memcmp(ie->icons[0].data, icons[0].data,
                      icons[0].width * icons[0].height * 4)))
           {
-             // found so free the input icons
-             for (i = 0; i < num_icons; i++)
-               free(icons[i].data);
+             // found so free the input icons - we already freed icons 1,2,3...
+             free(icons[0].data);
              free(icons);
              // ref the shared/cached one
              ie->ref++;
@@ -328,8 +327,8 @@ _e_comp_x_client_icon_free(Ecore_X_Icon *icons, int num_icons)
                {
                   // no refs left - free the icon from the share/cache
                   iconshare = eina_list_remove_list(iconshare, l);
-                  for (i = 0; i < ie->num_icons; i++)
-                    free(ie->icons[i].data);
+                  // free the input icons - we already freed icons 1,2,3..
+                  free(ie->icons[0].data);
                   free(ie->icons);
                   free(ie);
                }
