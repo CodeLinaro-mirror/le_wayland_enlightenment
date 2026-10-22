@@ -101,6 +101,39 @@ typedef struct
    DDCA_Display_Info info[];
 } DDCA_Display_Info_List;
 
+// libddcutil 2.x (.so.5) dropped adl support, shrinking the path union, so
+// every field after it (edid_bytes etc.) moves compared to the 1.x layout
+typedef struct
+{
+   DDCA_IO_Mode io_mode;
+   union {
+      int i2c_busno;
+      int hiddev_devno;
+   } path;
+} DDCA_IO_Path_2;
+
+typedef struct
+{
+   char marker[4];
+   int dispno;
+   DDCA_IO_Path_2 path;
+   int usb_bus;
+   int usb_device;
+   char mfg_id[DDCA_EDID_MFG_ID_FIELD_SIZE];
+   char model_name[DDCA_EDID_MODEL_NAME_FIELD_SIZE];
+   char sn[DDCA_EDID_SN_ASCII_FIELD_SIZE];
+   uint16_t product_code;
+   uint8_t edid_bytes[128];
+   DDCA_MCCS_Version_Spec vcp_version;
+   DDCA_Display_Ref dref;
+} DDCA_Display_Info_2;
+
+typedef struct
+{
+   int ct;
+   DDCA_Display_Info_2 info[];
+} DDCA_Display_Info_List_2;
+
 typedef struct
 {
    uint8_t mh;
@@ -203,6 +236,7 @@ typedef struct
 
 // ddc lib handle and func symbols
 static void *ddc_lib = NULL;
+static Eina_Bool ddc_api_2 = EINA_FALSE;
 struct {
    DDCA_Status (*ddca_init)
      (const char *libopts, DDCA_Syslog_Level syslog_level, DDCA_Init_Options opts);
@@ -285,9 +319,23 @@ _ddc_probe(void)
      }
    for (i = 0; i < ddc_dlist->ct; i++)
      {
-        DDCA_Display_Info *dinfo = &(ddc_dlist->info[i]);
-        DDCA_Display_Ref dref = dinfo->dref;
+        DDCA_Display_Ref dref;
+        const uint8_t *edid_bytes;
         int j;
+
+        if (ddc_api_2)
+          {
+             DDCA_Display_Info_2 *dinfo =
+               &(((DDCA_Display_Info_List_2 *)ddc_dlist)->info[i]);
+             dref = dinfo->dref;
+             edid_bytes = dinfo->edid_bytes;
+          }
+        else
+          {
+             DDCA_Display_Info *dinfo = &(ddc_dlist->info[i]);
+             dref = dinfo->dref;
+             edid_bytes = dinfo->edid_bytes;
+          }
 
         if (ddc_func.ddca_open_display2(dref, false, &(ddc_dh[i])) != 0)
           {
@@ -308,7 +356,7 @@ _ddc_probe(void)
              if (d->edid)
                {
                   for (j = 0; j < 128; j++)
-                    snprintf(&(d->edid[j * 2]), 3, "%02x", dinfo->edid_bytes[j]);
+                    snprintf(&(d->edid[j * 2]), 3, "%02x", edid_bytes[j]);
                   d->edid[j * 2] = 0;
                   d->screen = i;
                   eina_lock_take(&_devices_lock);
@@ -332,12 +380,13 @@ err:
 static Eina_Bool
 _ddc_init(void)
 {
-   // .so.[345] are ABI compatible with .so.2 for our uses - see
-   // the changes listed at:
+   // .so.[34] are ABI compatible with .so.2 for our uses, but .so.5
+   // (2.x) changed DDCA_Display_Info - see the changes listed at:
    // - https://www.ddcutil.com/c_api_99/
    // - https://www.ddcutil.com/c_api_120/
    // - https://www.ddcutil.com/c_api_200/
    ddc_lib = dlopen("libddcutil.so.5", RTLD_NOW | RTLD_LOCAL);
+   if (ddc_lib) ddc_api_2 = EINA_TRUE;
    if (!ddc_lib)
      ddc_lib = dlopen("libddcutil.so.4", RTLD_NOW | RTLD_LOCAL);
    if (!ddc_lib)

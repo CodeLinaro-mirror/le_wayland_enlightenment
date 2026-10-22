@@ -625,7 +625,7 @@ _backlight_devices_probe(Eina_Bool initial)
                     {
                        char *name = ecore_x_randr_output_name_get(root, out[i], NULL);
                        if (!name) continue;
-                       x_bl = ecore_x_randr_output_backlight_level_get(root, out[0]);
+                       x_bl = ecore_x_randr_output_backlight_level_get(root, out[i]);
                        if (x_bl >= 0.0)
                          {
                             Backlight_Device *bd = calloc(1, sizeof(Backlight_Device));
