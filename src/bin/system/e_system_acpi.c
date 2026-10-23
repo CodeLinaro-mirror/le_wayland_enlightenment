@@ -105,8 +105,8 @@ dev_del(Dev *d)
 {
   if (!d) return;
   devices = eina_list_remove(devices, d);
-  if (d->fd >= 0) close(d->fd);
   if (d->handler) ecore_main_fd_handler_del(d->handler);
+  if (d->fd >= 0) close(d->fd);
   free(d->name);
   free(d->file);
   free(d);
