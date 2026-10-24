@@ -306,7 +306,16 @@ _ddc_probe(void)
    // the below can be quite sluggish, so we don't want to do this
    // often, even though this is isolated in a worker thread. it will
    // block the ddc worker thread while this is done.
-   if (ddc_func.ddca_redetect_displays) ddc_func.ddca_redetect_displays();
+   if (ddc_func.ddca_redetect_displays)
+     {
+       DDCA_Status status = ddc_func.ddca_redetect_displays();
+
+       if (status != 0)
+         {
+           L("DDC: ddca_redetect_displays() failed (%i)", status);
+           goto err;
+         }
+     }
    if (ddc_func.ddca_get_display_info_list2(false, &ddc_dlist) != 0) goto err;
    if (!ddc_dlist) goto err;
    ddc_dh = calloc(ddc_dlist->ct, sizeof(DDCA_Display_Handle));
@@ -423,9 +432,25 @@ _ddc_init(void)
 
    // init lib with init funcs - newest tried first
    if (ddc_func.ddca_init2)
-     ddc_func.ddca_init2("", DDCA_SYSLOG_WARNING, DDCA_INIT_OPTIONS_NONE, NULL);
+     {
+       DDCA_Status status = ddc_func.ddca_init2("", DDCA_SYSLOG_WARNING,
+                                                DDCA_INIT_OPTIONS_NONE, NULL);
+       if (status != 0)
+         {
+           L("DDC: ddca_init2 failed (%i)", status);
+           return EINA_FALSE;
+         }
+     }
    else if (ddc_func.ddca_init)
-     ddc_func.ddca_init("", DDCA_SYSLOG_WARNING, DDCA_INIT_OPTIONS_NONE);
+     {
+       DDCA_Status status = ddc_func.ddca_init("", DDCA_SYSLOG_WARNING,
+                                               DDCA_INIT_OPTIONS_NONE);
+       if (status != 0)
+         {
+           L("DDC: ddca_init failed (%i)", status);
+           return EINA_FALSE;
+         }
+     }
 
    if (!_ddc_probe()) return EINA_FALSE;
 

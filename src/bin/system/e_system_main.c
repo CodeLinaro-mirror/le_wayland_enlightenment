@@ -142,6 +142,12 @@ main(int argc EINA_UNUSED, const char **argv EINA_UNUSED)
    ok = e_setuid_setup(&uid, &gid, &user_name, &group_name);
    if (ok != 0) exit(ok);
 
+   // some xdg dirs for things like ddcutil...
+   mkdir("/var/lib/enlightenment_system", 0700);
+   putenv("XDG_STATE_HOME=/var/lib/enlightenment_system");
+   mkdir("/var/cache/enlightenment_system", 0700);
+   putenv("XDG_CACHE_HOME=/var/cache/enlightenment_system");
+
    ecore_app_no_system_modules();
 
    eina_init();
