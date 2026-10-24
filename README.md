@@ -57,7 +57,7 @@ Highly suggested:
 * bluez5 (BT support and l2ping tool)
 * connman
 * bc (For everything calculator)
-* pulseaudio
+* pulseaudio or pipewire (or both when building packages for everyone)
 * acpid (Unless your system doesn't have ACPI at all)
 * packagekit (For packagekit module updates status)
 * udisks2
